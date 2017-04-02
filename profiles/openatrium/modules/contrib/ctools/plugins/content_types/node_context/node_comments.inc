@@ -20,7 +20,7 @@ if (module_exists('comment')) {
 }
 
 function ctools_node_comments_content_type_render($subtype, $conf, $panel_args, $context) {
-  $node = isset($context->data) ? clone($context->data) : NULL;
+  $node = isset($context->data) ? clone $context->data : NULL;
   $block = new stdClass();
   $block->module = 'comments';
   $block->delta  = $node->nid;
@@ -31,8 +31,6 @@ function ctools_node_comments_content_type_render($subtype, $conf, $panel_args, 
   }
   else if ($node->comment) {
     $block->content = ctools_comment_render($node, $conf);
-    // Update the history table, stating that this user viewed this node.
-    node_tag_new($node);
   }
 
   return $block;

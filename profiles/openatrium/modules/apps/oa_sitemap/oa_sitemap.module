@@ -251,7 +251,7 @@ function oa_sitemap_spaces($node, &$spaces,  $seen_nids = array(), $parent_child
   if ($node) {
     $visibility = field_get_items('node', $node, 'group_access');
     $visibility = $visibility[0]['value'];
-    $sections = oa_core_space_sections($nid, 1, FALSE, array(
+    $sections = oa_core_space_sections($nid, NODE_PUBLISHED, FALSE, array(
       'field_oa_section|tid',
       'field_oa_group_ref|target_id',
       'field_oa_team_ref|target_id',
@@ -299,7 +299,7 @@ function oa_sitemap_spaces($node, &$spaces,  $seen_nids = array(), $parent_child
     $spaces[$nid] = array(
       'nid' => 0,
       'parent_id' => -1 ,
-      'title' => variable_get('site_name', t('Home')),
+      'title' => t('Site Home'), // variable_get('site_name', t('Home')),
       'url' => url('<front>'),
       'url_edit' => '',
       'status' => 1,

@@ -112,6 +112,7 @@ function oa_worktracker_views_default_views() {
     'field_oa_worktracker_task_status' => 'field_oa_worktracker_task_status',
     'comment_count' => 'comment_count',
     'last_updated' => 'last_updated',
+    'field_oa_worktracker_duedate' => 'field_oa_worktracker_duedate',
   );
   $handler->display->display_options['style_options']['default'] = 'last_updated';
   $handler->display->display_options['style_options']['info'] = array(
@@ -183,6 +184,13 @@ function oa_worktracker_views_default_views() {
       'separator' => '',
       'empty_column' => 0,
     ),
+    'field_oa_worktracker_duedate' => array(
+      'sortable' => 1,
+      'default_sort_order' => 'asc',
+      'align' => '',
+      'separator' => '',
+      'empty_column' => 0,
+    ),
   );
   $handler->display->display_options['defaults']['style_options'] = FALSE;
   $handler->display->display_options['defaults']['row_plugin'] = FALSE;
@@ -231,6 +239,18 @@ function oa_worktracker_views_default_views() {
   $handler->display->display_options['fields']['timestamp']['label'] = '';
   $handler->display->display_options['fields']['timestamp']['exclude'] = TRUE;
   $handler->display->display_options['fields']['timestamp']['element_label_colon'] = FALSE;
+  /* Field: Content: Due date */
+  $handler->display->display_options['fields']['field_oa_worktracker_duedate']['id'] = 'field_oa_worktracker_duedate';
+  $handler->display->display_options['fields']['field_oa_worktracker_duedate']['table'] = 'field_data_field_oa_worktracker_duedate';
+  $handler->display->display_options['fields']['field_oa_worktracker_duedate']['field'] = 'field_oa_worktracker_duedate';
+  $handler->display->display_options['fields']['field_oa_worktracker_duedate']['settings'] = array(
+    'format_type' => 'oa_date',
+    'fromto' => 'both',
+    'multiple_number' => '',
+    'multiple_from' => '',
+    'multiple_to' => '',
+    'show_repeat_rule' => 'show',
+  );
   /* Field: Realname: Real name */
   $handler->display->display_options['fields']['realname_1']['id'] = 'realname_1';
   $handler->display->display_options['fields']['realname_1']['table'] = 'realname';
@@ -268,6 +288,7 @@ function oa_worktracker_views_default_views() {
   $handler->display->display_options['fields']['comment_count']['field'] = 'comment_count';
   $handler->display->display_options['fields']['comment_count']['label'] = 'Comments';
   $handler->display->display_options['fields']['comment_count']['alter']['path'] = 'node/';
+  $handler->display->display_options['fields']['comment_count']['element_type'] = 'span';
   $handler->display->display_options['fields']['comment_count']['separator'] = '';
   /* Field: Content: Updated/commented date */
   $handler->display->display_options['fields']['last_updated']['id'] = 'last_updated';
@@ -318,7 +339,7 @@ function oa_worktracker_views_default_views() {
     2 => array(),
     3 => array(),
   );
-  /* Filter criterion: Content: Open Atrium Section (oa_section_ref:target_id) */
+  /* Filter criterion: Content: Section (oa_section_ref:target_id) */
   $handler->display->display_options['filters']['oa_section_ref_target_id']['id'] = 'oa_section_ref_target_id';
   $handler->display->display_options['filters']['oa_section_ref_target_id']['table'] = 'field_data_oa_section_ref';
   $handler->display->display_options['filters']['oa_section_ref_target_id']['field'] = 'oa_section_ref_target_id';
@@ -451,7 +472,7 @@ function oa_worktracker_views_default_views() {
   );
   /* Filter criterion: Flags: Flagged */
   $handler->display->display_options['filters']['flagged']['id'] = 'flagged';
-  $handler->display->display_options['filters']['flagged']['table'] = 'flag_content';
+  $handler->display->display_options['filters']['flagged']['table'] = 'flagging';
   $handler->display->display_options['filters']['flagged']['field'] = 'flagged';
   $handler->display->display_options['filters']['flagged']['relationship'] = 'flag_content_rel';
   $handler->display->display_options['filters']['flagged']['value'] = '0';
@@ -469,7 +490,7 @@ function oa_worktracker_views_default_views() {
   $handler->display->display_options['pane_title'] = 'Task list';
   $handler->display->display_options['pane_category']['name'] = 'Open Atrium';
   $handler->display->display_options['pane_category']['weight'] = '0';
-  $handler->display->display_options['allow']['use_pager'] = 0;
+  $handler->display->display_options['allow']['use_pager'] = 'use_pager';
   $handler->display->display_options['allow']['items_per_page'] = 'items_per_page';
   $handler->display->display_options['allow']['offset'] = 0;
   $handler->display->display_options['allow']['link_to_view'] = 0;
@@ -502,6 +523,7 @@ function oa_worktracker_views_default_views() {
       'label' => 'Section',
     ),
   );
+  $handler->display->display_options['inherit_panels_path'] = '1';
 
   /* Display: Section information */
   $handler = $view->new_display('panel_pane', 'Section information', 'section_info');
@@ -572,6 +594,7 @@ function oa_worktracker_views_default_views() {
       'label' => 'Content',
     ),
   );
+  $handler->display->display_options['inherit_panels_path'] = '1';
 
   /* Display: Attachments */
   $handler = $view->new_display('panel_pane', 'Attachments', 'attachments');
@@ -642,6 +665,7 @@ function oa_worktracker_views_default_views() {
   $handler->display->display_options['arguments']['nid']['summary']['number_of_records'] = '0';
   $handler->display->display_options['arguments']['nid']['summary']['format'] = 'default_summary';
   $handler->display->display_options['arguments']['nid']['summary_options']['items_per_page'] = '25';
+  $handler->display->display_options['inherit_panels_path'] = '1';
 
   /* Display: User tasks */
   $handler = $view->new_display('panel_pane', 'User tasks', 'user_tasks');
@@ -816,6 +840,7 @@ function oa_worktracker_views_default_views() {
   $handler->display->display_options['fields']['comment_count']['field'] = 'comment_count';
   $handler->display->display_options['fields']['comment_count']['label'] = 'Comments';
   $handler->display->display_options['fields']['comment_count']['alter']['path'] = 'node/';
+  $handler->display->display_options['fields']['comment_count']['element_type'] = 'span';
   $handler->display->display_options['fields']['comment_count']['separator'] = '';
   /* Field: Content: Updated/commented date */
   $handler->display->display_options['fields']['last_updated']['id'] = 'last_updated';
@@ -905,7 +930,7 @@ function oa_worktracker_views_default_views() {
   );
   /* Filter criterion: Flags: Flagged */
   $handler->display->display_options['filters']['flagged']['id'] = 'flagged';
-  $handler->display->display_options['filters']['flagged']['table'] = 'flag_content';
+  $handler->display->display_options['filters']['flagged']['table'] = 'flagging';
   $handler->display->display_options['filters']['flagged']['field'] = 'flagged';
   $handler->display->display_options['filters']['flagged']['relationship'] = 'flag_content_rel';
   $handler->display->display_options['filters']['flagged']['value'] = '0';
@@ -923,7 +948,7 @@ function oa_worktracker_views_default_views() {
   $handler->display->display_options['pane_title'] = 'User Tasks';
   $handler->display->display_options['pane_category']['name'] = 'Open Atrium';
   $handler->display->display_options['pane_category']['weight'] = '0';
-  $handler->display->display_options['allow']['use_pager'] = 0;
+  $handler->display->display_options['allow']['use_pager'] = 'use_pager';
   $handler->display->display_options['allow']['items_per_page'] = 'items_per_page';
   $handler->display->display_options['allow']['offset'] = 0;
   $handler->display->display_options['allow']['link_to_view'] = 0;
@@ -951,6 +976,7 @@ function oa_worktracker_views_default_views() {
       'label' => 'User',
     ),
   );
+  $handler->display->display_options['inherit_panels_path'] = '1';
   $export['oa_worktracker'] = $view;
 
   return $export;

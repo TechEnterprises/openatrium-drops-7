@@ -13,14 +13,20 @@ function oa_wiki_panelizer_defaults() {
   $panelizer = new stdClass();
   $panelizer->disabled = FALSE; /* Edit this to true to make a default panelizer disabled initially */
   $panelizer->api_version = 1;
-  $panelizer->name = 'node:oa_wiki_page:default';
   $panelizer->title = 'Default';
   $panelizer->panelizer_type = 'node';
   $panelizer->panelizer_key = 'oa_wiki_page';
-  $panelizer->no_blocks = FALSE;
+  $panelizer->access = array();
+  $panelizer->view_mode = 'page_manager';
+  $panelizer->name = 'node:oa_wiki_page:default';
   $panelizer->css_id = '';
+  $panelizer->css_class = '';
   $panelizer->css = '';
-  $panelizer->pipeline = 'ipe_node_access';
+  $panelizer->no_blocks = FALSE;
+  $panelizer->title_element = 'H2';
+  $panelizer->link_to_entity = TRUE;
+  $panelizer->extra = array();
+  $panelizer->pipeline = 'standard';
   $panelizer->contexts = array();
   $panelizer->relationships = array(
     0 => array(
@@ -47,12 +53,6 @@ function oa_wiki_panelizer_defaults() {
       'id' => 1,
     ),
   );
-  $panelizer->access = array();
-  $panelizer->view_mode = 'page_manager';
-  $panelizer->css_class = '';
-  $panelizer->title_element = 'H2';
-  $panelizer->link_to_entity = TRUE;
-  $panelizer->extra = array();
   $display = new panels_display();
   $display->layout = 'radix_burr_flipped';
   $display->layout_settings = array();
@@ -69,8 +69,46 @@ function oa_wiki_panelizer_defaults() {
   $display->cache = array();
   $display->title = '';
   $display->uuid = 'bb6a940f-7670-401e-a236-7ab1c5798251';
+  $display->storage_type = 'panelizer_default';
+  $display->storage_id = 'node:oa_wiki_page:default';
   $display->content = array();
   $display->panels = array();
+  $pane = new stdClass();
+  $pane->pid = 'new-75a6ef87-6704-432f-90cf-62f15ce2ec6c';
+  $pane->panel = 'contentmain';
+  $pane->type = 'oa_users_submitted';
+  $pane->subtype = 'oa_users_submitted';
+  $pane->shown = TRUE;
+  $pane->access = array();
+  $pane->configuration = array(
+    'align' => '0',
+    'label' => 1,
+    'date' => '0',
+    'picture' => 0,
+    'image_style' => 'oa_medium_thumbnail',
+    'node_title' => 1,
+    'return' => 'Finish',
+    'cancel' => 'Cancel',
+    'context' => 'panelizer',
+    'override_title' => 0,
+    'override_title_text' => '',
+    'override_title_heading' => 'h2',
+    'form_build_id' => 'form-BkJBiLahmw2VSFnNLflf1vsCer3lkJwBs7Cru9zbp78',
+    'form_token' => '3t8MqfSEvIfOMIPdnCefRjmo5eMffDkS7_ETQz2wH4Q',
+    'form_id' => 'oa_user_submitted_form',
+    'op' => 'Finish',
+  );
+  $pane->cache = array();
+  $pane->style = array(
+    'settings' => NULL,
+  );
+  $pane->css = array();
+  $pane->extras = array();
+  $pane->position = 0;
+  $pane->locks = array();
+  $pane->uuid = '75a6ef87-6704-432f-90cf-62f15ce2ec6c';
+  $display->content['new-75a6ef87-6704-432f-90cf-62f15ce2ec6c'] = $pane;
+  $display->panels['contentmain'][0] = 'new-75a6ef87-6704-432f-90cf-62f15ce2ec6c';
   $pane = new stdClass();
   $pane->pid = 'new-7746f122-1e4b-445f-8cf4-d15ef627d71f';
   $pane->panel = 'contentmain';
@@ -93,11 +131,11 @@ function oa_wiki_panelizer_defaults() {
   );
   $pane->css = array();
   $pane->extras = array();
-  $pane->position = 0;
+  $pane->position = 1;
   $pane->locks = array();
   $pane->uuid = '7746f122-1e4b-445f-8cf4-d15ef627d71f';
   $display->content['new-7746f122-1e4b-445f-8cf4-d15ef627d71f'] = $pane;
-  $display->panels['contentmain'][0] = 'new-7746f122-1e4b-445f-8cf4-d15ef627d71f';
+  $display->panels['contentmain'][1] = 'new-7746f122-1e4b-445f-8cf4-d15ef627d71f';
   $pane = new stdClass();
   $pane->pid = 'new-32c308fc-ae57-43df-a4fa-8667a747ea6f';
   $pane->panel = 'contentmain';
@@ -120,11 +158,11 @@ function oa_wiki_panelizer_defaults() {
   );
   $pane->css = array();
   $pane->extras = array();
-  $pane->position = 1;
+  $pane->position = 2;
   $pane->locks = array();
   $pane->uuid = '32c308fc-ae57-43df-a4fa-8667a747ea6f';
   $display->content['new-32c308fc-ae57-43df-a4fa-8667a747ea6f'] = $pane;
-  $display->panels['contentmain'][1] = 'new-32c308fc-ae57-43df-a4fa-8667a747ea6f';
+  $display->panels['contentmain'][2] = 'new-32c308fc-ae57-43df-a4fa-8667a747ea6f';
   $pane = new stdClass();
   $pane->pid = 'new-a811ab4b-b391-4bac-aee2-f0b6bdb5a65d';
   $pane->panel = 'contentmain';
@@ -135,7 +173,7 @@ function oa_wiki_panelizer_defaults() {
   $pane->configuration = array(
     'override_title' => FALSE,
     'override_title_text' => '',
-    'build_mode' => 'page_manager',
+    'build_mode' => 'full',
     'identifier' => '',
     'link' => TRUE,
     'context' => 'panelizer',
@@ -148,11 +186,11 @@ function oa_wiki_panelizer_defaults() {
     'css_class' => 'link-wrapper',
   );
   $pane->extras = array();
-  $pane->position = 2;
+  $pane->position = 3;
   $pane->locks = array();
   $pane->uuid = 'a811ab4b-b391-4bac-aee2-f0b6bdb5a65d';
   $display->content['new-a811ab4b-b391-4bac-aee2-f0b6bdb5a65d'] = $pane;
-  $display->panels['contentmain'][2] = 'new-a811ab4b-b391-4bac-aee2-f0b6bdb5a65d';
+  $display->panels['contentmain'][3] = 'new-a811ab4b-b391-4bac-aee2-f0b6bdb5a65d';
   $pane = new stdClass();
   $pane->pid = 'new-fd50a4cf-8298-4584-8504-b21e0e215e78';
   $pane->panel = 'contentmain';
@@ -173,11 +211,11 @@ function oa_wiki_panelizer_defaults() {
   );
   $pane->css = array();
   $pane->extras = array();
-  $pane->position = 3;
+  $pane->position = 4;
   $pane->locks = array();
   $pane->uuid = 'fd50a4cf-8298-4584-8504-b21e0e215e78';
   $display->content['new-fd50a4cf-8298-4584-8504-b21e0e215e78'] = $pane;
-  $display->panels['contentmain'][3] = 'new-fd50a4cf-8298-4584-8504-b21e0e215e78';
+  $display->panels['contentmain'][4] = 'new-fd50a4cf-8298-4584-8504-b21e0e215e78';
   $pane = new stdClass();
   $pane->pid = 'new-e46086d2-3bda-405b-b9b1-6d44d79ea78e';
   $pane->panel = 'contentmain';
@@ -197,11 +235,11 @@ function oa_wiki_panelizer_defaults() {
   );
   $pane->css = array();
   $pane->extras = array();
-  $pane->position = 4;
+  $pane->position = 5;
   $pane->locks = array();
   $pane->uuid = 'e46086d2-3bda-405b-b9b1-6d44d79ea78e';
   $display->content['new-e46086d2-3bda-405b-b9b1-6d44d79ea78e'] = $pane;
-  $display->panels['contentmain'][4] = 'new-e46086d2-3bda-405b-b9b1-6d44d79ea78e';
+  $display->panels['contentmain'][5] = 'new-e46086d2-3bda-405b-b9b1-6d44d79ea78e';
   $pane = new stdClass();
   $pane->pid = 'new-7ddbd76b-3d46-436a-b91b-5078220845a8';
   $pane->panel = 'sidebar';
@@ -379,22 +417,22 @@ function oa_wiki_panelizer_defaults() {
   $panelizer = new stdClass();
   $panelizer->disabled = FALSE; /* Edit this to true to make a default panelizer disabled initially */
   $panelizer->api_version = 1;
-  $panelizer->name = 'node:oa_wiki_page:default:featured';
   $panelizer->title = 'Default';
   $panelizer->panelizer_type = 'node';
   $panelizer->panelizer_key = 'oa_wiki_page';
-  $panelizer->no_blocks = FALSE;
-  $panelizer->css_id = '';
-  $panelizer->css = '';
-  $panelizer->pipeline = 'standard';
-  $panelizer->contexts = array();
-  $panelizer->relationships = array();
   $panelizer->access = array();
   $panelizer->view_mode = 'featured';
+  $panelizer->name = 'node:oa_wiki_page:default:featured';
+  $panelizer->css_id = '';
   $panelizer->css_class = '';
+  $panelizer->css = '';
+  $panelizer->no_blocks = FALSE;
   $panelizer->title_element = 'H2';
   $panelizer->link_to_entity = TRUE;
   $panelizer->extra = array();
+  $panelizer->pipeline = 'standard';
+  $panelizer->contexts = array();
+  $panelizer->relationships = array();
   $display = new panels_display();
   $display->layout = 'onecol';
   $display->layout_settings = array();
@@ -407,6 +445,8 @@ function oa_wiki_panelizer_defaults() {
   $display->cache = array();
   $display->title = '%node:title';
   $display->uuid = 'd5bdeeaa-12a0-40e6-9fa6-3860a3e653b3';
+  $display->storage_type = 'panelizer_default';
+  $display->storage_id = 'node:oa_wiki_page:default:featured';
   $display->content = array();
   $display->panels = array();
   $pane = new stdClass();
@@ -417,7 +457,7 @@ function oa_wiki_panelizer_defaults() {
   $pane->shown = TRUE;
   $pane->access = array();
   $pane->configuration = array(
-    'label' => 'title',
+    'label' => 'hidden',
     'formatter' => 'text_default',
     'delta_limit' => 0,
     'delta_offset' => '0',

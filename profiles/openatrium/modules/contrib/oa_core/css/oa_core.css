@@ -11,6 +11,10 @@
   padding: 6px 12px;
 }
 
+.pane-node-links {
+  clear: both;
+}
+
 .widget-preview iframe {
   max-width: 100%;
 }
@@ -26,6 +30,16 @@
 
 .node-teaser .submitted {
   font-style: italic;
+}
+
+.oa-users-submitted .oa-user-picture img {
+  height: 30px;
+  width: 30px;
+}
+
+.select2-drop {
+  /* need drop-down menu to be above any popup dialogs like views */
+  z-index: 10002;
 }
 
 #modal-content .widget-preview-title {
@@ -86,4 +100,8 @@
 
 .pane-node-field-oa-media .field-item {
   margin-bottom: 5px;
+}
+
+.panels-dnd .oa-layout-fluid {
+  float: left;
 }

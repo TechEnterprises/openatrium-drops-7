@@ -78,9 +78,18 @@ function panopoly_widgets_configure_form_submit($form, &$form_state) {
  * Implements hook_field_default_field_instances_alter().
  */
 function panopoly_widgets_field_default_field_instances_alter(&$instances) {
+  // Set the file extensions from our configuration setting.
   if (isset($instances['fieldable_panels_pane-basic_file-field_basic_file_file'])) {
     $file_extensions = variable_get('panopoly_widgets_file_extensions', PANOPOLY_WIDGETS_FILE_EXTENSIONS_DEFAULT);
     $instances['fieldable_panels_pane-basic_file-field_basic_file_file']['settings']['file_extensions'] = $file_extensions;
+  }
+  // If the linkit module isn't present, then we alter the field settings for
+  // the 'Add image' widget to disable linkit on the 'Link' field.
+  if (isset($instances['fieldable_panels_pane-image-field_basic_image_link'])) {
+    if (!module_exists('linkit')) {
+      $instances['fieldable_panels_pane-image-field_basic_image_link']['settings']['linkit']['enable'] = 0;
+      $instances['fieldable_panels_pane-image-field_basic_image_link']['settings']['linkit']['profile'] = NULL;
+    }
   }
 }
 
@@ -92,14 +101,6 @@ function panopoly_widgets_page_build(&$page) {
   // Add our custom javascript to the footer to override other things.
   drupal_add_js(drupal_get_path('module', 'panopoly_widgets') . '/panopoly-widgets.js', array('scope' => 'footer'));
   drupal_add_js(drupal_get_path('module', 'panopoly_widgets') . '/panopoly-widgets-spotlight.js', array('scope' => 'footer'));
-
-  // If jquery_update was used to update jQuery UI to version 1.9 or higher
-  // than we need to load a plugin to add the '.rotate' function to the tabs
-  // widget.
-  $jquery_ui = drupal_get_library('system', 'ui');
-  if (version_compare($jquery_ui['version'], '1.9', '>=')) {
-    drupal_add_js(drupal_get_path('module', 'panopoly_widgets') . '/jquery-ui-tabs-rotate.js', array('scope' => 'footer'));
-  }
 }
     
 /**
@@ -195,7 +196,12 @@ function panopoly_widgets_form_alter(&$form, &$form_state, $form_id) {
     $form['title']['#attributes']['placeholder'] = $form['title']['#title'];
     $form['title']['#title_display'] = 'invisible';
     $form['widget_settings']['title'] = $form['title'];
-    unset($form['title']);
+
+    // If the title hasn't been replaced by the title module then it's safe to
+    // unset it. Otherwise it's already been hidden by the title module.
+    if(!(module_exists('title') && isset($form['title']['#field_replacement']) && $form['title']['#field_replacement'])){
+      unset($form['title']);
+    }
 
     // Move the link field into the general settings tab.
     $form['widget_settings']['link'] = $form['link'];
@@ -388,12 +394,11 @@ function panopoly_widgets_entity_info_alter(&$entity_info) {
  */
 function panopoly_widgets_theme($existing, $type, $theme, $path) {
   return array(
+    'panopoly_spotlight_wrapper' => array(
+      'render element' => 'element',
+    ),
     'panopoly_spotlight_view' => array(
-      'variables' => array(
-        'items' => NULL,
-        'delta' => NULL,
-        'settings' => NULL,
-      ),
+      'render element' => 'element',
     ),
   );
 }
@@ -424,7 +429,8 @@ function panopoly_widgets_file_default_displays_alter(&$default_displays) {
 
   // Set the default video configuration for videos
   if (!empty($default_displays['video__default__media_vimeo_video'])) {
-    $default_displays['video__default__media_vimeo_video']->settings['protocol'] = '//';
+    $default_displays['video__default__media_vimeo_video']->weight = 0;
+    $default_displays['video__default__media_vimeo_video']->settings['protocol_specify'] = FALSE;
   }
 
   // Set the default image style for videos to be our custom video image style
@@ -466,6 +472,39 @@ function panopoly_widgets_menu_block_tree_alter($tree, $config) {
       $tree[$key]['link']['in_active_trail'] = TRUE;
     }
   }
+}
+
+/**
+ * Implements hook_fieldable_panels_pane_view().
+ */
+function panopoly_widgets_fieldable_panels_pane_view($entity, $view_mode, $langcode) {
+  if ($entity->bundle == 'image') {
+    // Render the image in a link if one is given.
+    if (!empty($entity->field_basic_image_link[LANGUAGE_NONE][0]['url'])) {
+      $entity->content['field_basic_image_image'][0]['#path'] = array(
+        'path' => $entity->field_basic_image_link[LANGUAGE_NONE][0]['display_url'],
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function panopoly_widgets_form_fieldable_panels_panes_fieldable_panels_pane_content_type_edit_form_alter(&$form, &$form_state) {
+  if (isset($form['widget_settings']['link'])) {
+    // For when panopoly_magic is enabled.
+    $element =& $form['widget_settings']['link'];
+  }
+  else {
+    $element =& $form['link'];
+  }
+
+  $element['path']['#linkit'] = array(
+    'enable' => TRUE,
+    'profile' => 'content_fields',
+    'button_text' => t('Search for existing content'),
+  );
 }
 
 /**

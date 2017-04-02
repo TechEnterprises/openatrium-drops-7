@@ -5,7 +5,7 @@ core = 7.x
 
 ; Drupal Core
 projects[drupal][type] = core
-projects[drupal][version] = 7.38
+projects[drupal][version] = 7.54
 
 ; ***** Patches from Panopoly *******
 ; Bug with image styles on database update
@@ -29,9 +29,6 @@ projects[drupal][patch][1093420] = http://drupal.org/files/1093420-22.patch
 ; Patch to prevent empty titles when menu_check_access called more than once
 projects[drupal][patch][1697570] = http://drupal.org/files/drupal-menu_always_load_objects-1697570-5.patch
 
-; Patch to fix sanitization of titles in entity_reference
-projects[drupal][patch][1919338] = http://drupal.org/files/issues/options_drupal7-1919338-58.patch
-
 ; Patch to move registry build so entity_get_info can be called during install.
 projects[drupal][patch][1311820] = https://www.drupal.org/files/issues/1311820-drupal-registry_update-13.patch
 
@@ -44,5 +41,11 @@ projects[drupal][patch][2199001] = https://www.drupal.org/files/issues/node_acce
 ; Fix javascript error with angular
 projects[drupal][patch][2492993] = https://www.drupal.org/files/issues/2492993-drupal-hash-1.patch
 
-; Fix invalid headers with image styles
-projects[drupal][patch][1891228] = https://www.drupal.org/files/issues/image_system-can_create_invalid_headers-1891228-16.patch
+; Fixes sticky headers are not calculating the column widths properly.
+projects[drupal][patch][2097081] = https://www.drupal.org/files/2097081-fix-sticky-header-column-width-7.x-6.patch
+
+; Prevent Drupal from scanning node_module and bower_component directories in theme
+projects[drupal][patch][2329453] = https://www.drupal.org/files/issues/ignore_front_end_vendor-2329453-111.patch
+
+; Issues with "required, multiple" fields in forms.
+projects[drupal][patch][980144] = https://www.drupal.org/files/issues/d7-issues_with_required-980144-76.patch

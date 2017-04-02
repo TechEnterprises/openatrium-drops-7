@@ -5,33 +5,34 @@
  * Perform actions to set up the site for this profile.
  */
 
-
 /**
  * Implements hook_install_tasks()
  */
 function openatrium_install_tasks(&$install_state) {
   $tasks = array();
 
-  // Add our custom CSS file for the installation process
+  // Add our custom CSS file for the installation process.
   drupal_add_css(drupal_get_path('profile', 'openatrium') . '/openatrium.css');
 
-  require_once(drupal_get_path('module', 'apps') . '/apps.profile.inc');
+  require_once drupal_get_path('module', 'apps') . '/apps.profile.inc';
   $server = array(
     'machine name' => 'openatrium',
     'default apps' => array(
-      // built-in apps
+      // built-in apps.
       'oa_discussion',
       'oa_events',
       'oa_wiki',
       'oa_worktracker',
-      // core addon apps
+      // Core addon apps.
       'oa_admin',
       'oa_appearance',
       'oa_archive',
+      'oa_brand',
       'oa_clone',
       'oa_comment',
       'oa_contextual_tabs',
       'oa_events_import',
+      'oa_export',
       'oa_favorites',
       'oa_files',
       'oa_home',
@@ -39,10 +40,15 @@ function openatrium_install_tasks(&$install_state) {
       'oa_media',
       'oa_messages_digest',
       'oa_notifications',
+  // Currently having problems with oa_project enabling during install
+  // So leave this off for now
+  //  'oa_project',.
       'oa_related',
       'oa_sandbox',
       'oa_search',
       'oa_sitemap',
+      'oa_site_layout',
+      'oa_site_layout_defaults',
       'oa_styles',
       'oa_subspaces',
       'oa_toolbar',
@@ -57,7 +63,7 @@ function openatrium_install_tasks(&$install_state) {
     'type' => 'normal',
   );
 
-  // set default permissions
+  // Set default permissions.
   $tasks['openatrium_set_permissions'] = array(
     'type' => 'normal',
   );
@@ -79,6 +85,13 @@ function openatrium_install_tasks(&$install_state) {
     }
   }
 
+  /*** TASKS BELOW RUN EVEN WITH QUICKSTART ***/
+
+  // Revert bootstrap tour defaults.
+  $tasks['openatrium_revert_tours'] = array(
+    'type' => 'normal',
+  );
+
   return $tasks;
 }
 
@@ -97,10 +110,19 @@ function openatrium_features_revert_all() {
 }
 
 /**
- * Revert all features.
+ * Revert oa_tour_default feature.
+ */
+function openatrium_revert_tours() {
+  features_revert(array(
+    'oa_tour_defaults' => array('bootstrap_tour'),
+  ));
+}
+
+/**
+ * Update permissions.
  */
 function openatrium_set_permissions() {
-  // update admin and member permissions
+  // Update admin and member permissions.
   oa_adminrole_update_roles();
 }
 
@@ -109,7 +131,7 @@ function openatrium_set_permissions() {
  */
 function openatrium_rebuild_search() {
   global $install_state;
-  require_once(drupal_get_path('module', 'oa_search') . '/oa_search.install');
+  require_once drupal_get_path('module', 'oa_search') . '/oa_search.install';
   features_revert(array(
     'oa_search' => array('search_api_index'),
   ));
@@ -128,7 +150,7 @@ function openatrium_node_access_rebuild() {
  * Implements hook_install_tasks_alter()
  */
 function openatrium_install_tasks_alter(&$tasks, $install_state) {
-  require_once(drupal_get_path('module', 'oa_core') . '/oa_core.profile.inc');
+  require_once drupal_get_path('module', 'oa_core') . '/oa_core.profile.inc';
   $tasks['install_load_profile']['function'] = 'oa_core_install_load_profile';
   // Add option for importing from db.
   install_from_db_install_tasks_alter($tasks, $install_state);
@@ -146,12 +168,11 @@ function openatrium_form_apps_profile_apps_select_form_alter(&$form, $form_state
   $form['default_content_fieldset']['#access'] = FALSE;
 }
 
-
 /**
  * Implements hook_install().
  */
 function openatrium_install() {
-  // set the default theme
+  // Set the default theme.
   _openatrium_set_up_theme();
   // Put modules into contrib.
   variable_set('apps_install_path', 'sites/all/modules/contrib');
@@ -161,10 +182,51 @@ function openatrium_install() {
  * Set the default theme.
  */
 function _openatrium_set_up_theme() {
-  $theme = 'oa_radix';
+  $theme = 'oa_theme';
   theme_enable(array($theme));
   variable_set('theme_default', $theme);
-  theme_disable(array('responsive_bartik', 'bartik'));
+  theme_disable(array('responsive_bartik', 'bartik', 'oa_radix'));
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function openatrium_requirements($phase) {
+  // Cannot test during install time because menu is how test and can't use that.
+  $requirements = array();
+  // Ensure translations don't break during installation.
+  $t = get_t();
+
+  // Report Drupal version.
+  if ($phase == 'runtime') {
+    $available = FALSE;
+    if (strpos(request_uri(), '?q=') === FALSE && strpos(request_uri(), '&q=') === FALSE) {
+      $available = TRUE;
+    }
+    else {
+      $request = drupal_http_request($GLOBALS['base_url'] . '/admin/config/search/clean-urls/check');
+      // If the request returns HTTP 200, clean URLs are available.
+      if (isset($request->code) && $request->code == 200 && ($data = drupal_json_decode($request->data)) && !empty($data['status'])) {
+        $available = TRUE;
+      }
+    }
+    if (!$available) {
+      $requirements['clean_urls_available'] = array(
+        'title' => $t('Clean Urls Available'),
+        'value' => $t('Clean Urls is not available, but OpenAtrium requires it to function properly.'),
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+    if ($phase == 'runtime' && !variable_get('clean_url', 0)) {
+      $requirements['clean_urls_enabled'] = array(
+        'title' => $t('Clean Urls Enabled'),
+        'value' => $t('Clean Urls are not enabled, but OpenAtrium requires it to function properly.'),
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+  }
+
+  return $requirements;
 }
 
 /**
@@ -205,7 +267,6 @@ function openatrium_update_7004() {
   module_enable($enable);
 }
 
-
 /**
  * Enable command_buttons.
  */
@@ -242,6 +303,16 @@ function openatrium_update_7007() {
 function openatrium_update_7008() {
   $enable = array(
     'oa_contextual_tabs',
+  );
+  module_enable($enable);
+}
+
+/**
+ * Enable oa_export.
+ */
+function openatrium_update_7009() {
+  $enable = array(
+    'oa_export',
   );
   module_enable($enable);
 }

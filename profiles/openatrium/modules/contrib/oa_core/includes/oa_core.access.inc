@@ -46,6 +46,23 @@ function oa_core_section_access($row, $spaces, $account) {
 }
 
 /**
+ * Implements hook_og_subgroups_is_parent_private_alter().
+ * Handle special Atrium case where a private Group Parent does not make a public
+ * space private.  Only having a private SPACE Parent makes a public space private.
+ * @param $result
+ * @param $entity_type
+ * @param $entity
+ */
+function oa_core_og_subgroups_is_parent_private_alter(&$result, $entity_type, $entity) {
+  if ($result && ($entity_type == 'node')) {
+    if ($entity->type == OA_GROUP_TYPE) {
+      // A Private parent GROUP does not make the child space private
+      $result = FALSE;
+    }
+  }
+}
+
+/**
  * Implements hook_node_grants().
  * Define node access grant realm for Open Atrium sections
  */
@@ -171,19 +188,8 @@ function oa_core_node_access_records($node) {
 }
 
 /**
- * Update the node_access_records of the given nodes
- * @param  array $nodes array of nids
- */
-function oa_core_update_access_records($nodes) {
-  drupal_static_reset('oa_core_node_grants');
-  foreach ($nodes as $nid) {
-    $node = node_load($nid);
-    node_access_acquire_grants($node);
-  }
-}
-
-/**
- * Implements hook_node_access()
+ * Implements hook_node_access().
+ *
  * Add proper 'create' access checks that OG doesn't handle
  */
 function oa_core_node_access($node, $op, $account) {
@@ -214,7 +220,8 @@ function oa_core_node_access($node, $op, $account) {
 }
 
 /**
- * Implements hook_node_update
+ * Implements hook_node_update().
+ *
  * if saving a section or space node, update access locks on related content
  */
 function oa_core_node_update($node) {
@@ -222,17 +229,19 @@ function oa_core_node_update($node) {
     // check if group access changed and update space content grants
     $rebuild = module_invoke_all('oa_core_og_content_needs_rebuild', $node);
     if (in_array(TRUE, $rebuild, TRUE)) {
-      // rebuild space content nodes
-      $nodes = db_select('og_membership', 'og')
-        ->fields('og', array('etid'))
-        ->condition('og.entity_type', 'node')
-        ->condition('og.gid', $node->nid)  // all content nodes of this space
-        ->execute()
-        ->fetchCol(0);
-      // clear the static node cache for the space node so correct access
-      // values are tested in hook_node_access_records
-      entity_get_controller('node')->resetCache(array($node->nid));
-      oa_core_update_access_records($nodes);
+      // Get all subgroups for this node.
+      $subgroup_nids = oa_core_get_groups_by_parent($node->nid, $node->type, NULL, FALSE, NULL, TRUE, FALSE);
+      $batch = batch_get();
+      // Don't do nested batch
+      if (empty($batch)) {
+        // Prepare the batch.
+        _oa_core_update_access_records_batch_prepare($subgroup_nids);
+        // Trigger the batch.
+        batch_process();
+      }
+      else {
+        oa_core_update_access_records($subgroup_nids);
+      }
     }
     oa_core_clear_group_cache($node);
   }
@@ -242,7 +251,7 @@ function oa_core_node_update($node) {
     $is_public  = oa_core_section_is_public($node);
     if ($was_public != $is_public) {
       // rebuild section content nodes
-      $nodes = db_select('field_data_' . OA_SECTION_FIELD, 'n')
+      $nids = db_select('field_data_' . OA_SECTION_FIELD, 'n')
         ->fields('n', array('entity_id'))
         ->condition('n.entity_type', 'node')
         ->condition('n.oa_section_ref_target_id', $node->nid)
@@ -251,8 +260,98 @@ function oa_core_node_update($node) {
       // clear the static node cache for the space node so correct access
       // values are tested in hook_node_access_records
       entity_get_controller('node')->resetCache(array($node->nid));
-      oa_core_update_access_records($nodes);
+      oa_core_update_access_records($nids);
     }
+  }
+}
+
+/**
+ * Update the node_access_records of the given nodes.
+ *
+ * @param array $nids
+ *   Node nids that need updated node grants.
+ */
+function oa_core_update_access_records($nids) {
+  drupal_static_reset('oa_core_node_grants');
+  foreach ($nids as $nid) {
+    $node = node_load($nid);
+    // Clear the static node cache for the space node so correct access
+    // values are tested in hook_node_access_records.
+    entity_get_controller('node')->resetCache(array($nid));
+    // Update the node grants.
+    node_access_acquire_grants($node);
+  }
+}
+
+/**
+ * Set up the batch process to update node records.
+ *
+ * @param array $subgroup_nids
+ *   Nids for all subgroups of the node being updated.
+ */
+function _oa_core_update_access_records_batch_prepare($subgroup_nids) {
+
+  // Define the batch.
+  $batch = array(
+    'title' => t('Updating node access records due to a change in "Group Visibility"'),
+    'init_message' => t('Preparing to update records.'),
+    'operations' => array(array('_oa_core_update_access_records_batch', array($subgroup_nids))),
+    'finished' => '_oa_core_update_access_records_batch_finished',
+  );
+
+  // Set the batch using a helper in case drush is used.
+  oa_core_batch_set($batch);
+}
+
+/**
+ * Batch for updating node access records.
+ *
+ * @param array $subgroup_nids
+ *   Nids for all subgroups of the node being updated.
+ * @param array $context
+ *   Carried over between batches.
+ */
+function _oa_core_update_access_records_batch($subgroup_nids, &$context) {
+  if (empty($context['sandbox']['nids'])) {
+
+    $context['sandbox']['nids'] = $subgroup_nids;
+
+    // These are nids returned from oa_core_get_groups_by_parent().
+    foreach ($subgroup_nids as $nid) {
+      // Get membership nids using the og_group_ref field.
+      $membership_nids = oa_core_get_membership_nodes($nid);
+      // Merge the results.
+      $new_array = array_merge($context['sandbox']['nids'], $membership_nids);
+      // Update the sandbox.
+      $context['sandbox']['nids'] = $new_array;
+    }
+    $context['results'] = count($context['sandbox']['nids']);
+  }
+
+  // Number of nodes updated per pass.
+  $records_per_pass = 25;
+
+  // Define the records to run for this pass.
+  $current_records = array_splice($context['sandbox']['nids'], 0, $records_per_pass);
+
+  // Update the node access records for this pass.
+  oa_core_update_access_records($current_records);
+
+  // We are done when the sandbox nids array is empty.
+  $context['finished'] = empty($context['sandbox']['nids']) ? 1 : 0;
+
+}
+
+/**
+ * Called when the batch is finished.
+ *
+ * @param boolean $success
+ * @param int $results
+ * @param $operations
+ */
+function _oa_core_update_access_records_batch_finished($success, $results, $operations) {
+  if ($success && !empty($results)) {
+    drupal_set_message(t('Updated node access records for @count nodes.', array('@count' => $results)));
   }
 }
 
@@ -434,6 +533,21 @@ function oa_core_og_membership_insert($og_membership) {
 }
 
 /**
+ * Determine true privacy of a space by checking node grants
+ * @param $node object or nid
+ * @return TRUE if space is private
+ */
+function oa_core_get_group_privacy($node) {
+  $nid = is_numeric($node) ? $node : $node->nid;
+  $query = db_select('node_access', 'n')
+    ->fields('n', array('grant_view'))
+    ->condition('nid', $nid)
+    ->condition('realm', 'all');
+  $result = $query->execute()->fetchcol(0);
+  return empty($result);
+}
+
+/**
  * Utility function to return visibility data for a given node
  * $data['public'] TRUE if node is public, FALSE if private
  * $data['title'] either "Public" or "Private"
@@ -443,6 +557,10 @@ function oa_core_og_membership_insert($og_membership) {
  * $data['accessors']['users'] list of users that can access
  */
 function oa_core_visibility_data($node) {
+  $static = &drupal_static(__FUNCTION__, array());
+  if (!empty($static[$node->nid])) {
+    return $static[$node->nid];
+  }
   $data = array();
   $data['published'] = !empty($node->status);
   $data['archived'] = FALSE;
@@ -452,16 +570,23 @@ function oa_core_visibility_data($node) {
   }
   if ($node->type == OA_SPACE_TYPE || $node->type == OA_GROUP_TYPE) {
     $visibility = field_get_items('node', $node, 'group_access');
-    $data['public'] = empty($visibility[0]['value']);
-    if (!$data['public']) {
-      $data['accessors']['group'] = array(
-        'links' => _oa_core_build_visibility_links('node', $node, 'oa_parent_space', OA_GROUP_TYPE),
-        'label' => t('Groups'),
-      );
-      $data['accessors']['space'] = array(
-        'links' => _oa_core_build_visibility_links('node', $node, 'oa_parent_space', OA_SPACE_TYPE),
-        'label' => t('Spaces'),
-      );
+
+    $private = oa_core_get_group_privacy($node);
+    $data['public'] = !$private;
+    $data['space_public_in_private'] = $private && empty($visibility[0]['value']);
+    if (!$data['public'] && ($ids = og_subgroups_parents_load('node', $node->nid)) && !empty($ids['node'])) {
+      if ($groups = array_filter(oa_core_get_titles($ids['node'], 'oa_group', 'title', array('link'), TRUE, 0))) {
+        $data['accessors']['group'] = array(
+          'links' => $groups['links'],
+          'label' => t('Groups'),
+        );
+      }
+      if ($spaces = array_filter(oa_core_get_titles($ids['node'], 'oa_space', 'title', array('link'), TRUE, 0))) {
+        $data['accessors']['space'] = array(
+          'links' => $spaces['links'],
+          'label' => t('Spaces'),
+        );
+      }
     }
   }
   else {
@@ -486,23 +611,29 @@ function oa_core_visibility_data($node) {
       $data['public'] = TRUE;
     }
     else {
+      $space_private = oa_core_get_group_privacy($space_node);
       $visibility = field_get_items('node', $space_node, 'group_access');
-      $data['public'] = (($section_node->type != OA_SECTION_TYPE) || oa_core_section_is_public($section_node))
-        && empty($visibility[0]['value']);
+      $data['space_public_in_private'] = $space_private && empty($visibility[0]['value']);
+
+      $private = oa_core_get_group_privacy($space_reference_field[0]['target_id']);
+      $data['public'] = ((($section_node->type != OA_SECTION_TYPE) || oa_core_section_is_public($section_node))
+        && !$private);
 
       if (!$data['public']) {
-
         $spaces = _oa_core_build_visibility_links('node', $section_node, OA_GROUP_FIELD, OA_SPACE_TYPE);
-        if (!empty($visibility[0]['value']) || !empty($spaces)) {
+        if ($private || !empty($spaces)) {
           $data['accessors']['space'] = array(
             'links' => $spaces + _oa_core_build_visibility_links('node', $section_node, OA_SPACE_FIELD, OA_SPACE_TYPE),
             'label' => t('Spaces'),
           );
         }
-        $data['accessors']['group'] = array(
-          'links' => _oa_core_build_visibility_links('node', $section_node, OA_GROUP_FIELD, OA_GROUP_TYPE),
-          'label' => t('Groups'),
-        );
+        $spaces = _oa_core_build_visibility_links('node', $section_node, OA_GROUP_FIELD, OA_GROUP_TYPE);
+        if ($private || !empty($spaces)) {
+          $data['accessors']['group'] = array(
+            'links' => $spaces + _oa_core_build_visibility_links('node', $section_node, OA_SPACE_FIELD, OA_GROUP_TYPE),
+            'label' => t('Groups'),
+          );
+        }
         $data['accessors']['teams'] = array(
           'links' => _oa_core_build_visibility_links('node', $section_node, OA_TEAM_FIELD),
           'label' => t('Teams'),
@@ -515,6 +646,7 @@ function oa_core_visibility_data($node) {
     }
   }
   $data['title'] = $data['public'] ? t('Public') : t('Private');
+  $static[$node->nid] = $data;
   return $data;
 }
 
@@ -523,20 +655,40 @@ function oa_core_visibility_data($node) {
  */
 function _oa_core_build_visibility_links($type, $node, $field, $bundle = '') {
   $links = array();
-  $values = field_get_items('node', $node, $field);
-  if (!empty($values)) {
-    $links = array();
-    foreach ($values as $value) {
-      if ($type == 'node') {
-        $value_node = node_load($value['target_id']);
-        if (!empty($value_node) && ((empty($bundle) || ($bundle == $value_node->type)))) {
-          $links[] = l($value_node->title, "node/" . $value_node->nid);
-        }
+  $nids = array();
+  if ($field == OA_SPACE_FIELD) {
+    // Get all parent spaces instead of just direct parent
+    $spaces = field_get_items('node', $node, $field);
+    if (!empty($spaces)) {
+      $space = current($spaces);
+      $nids = oa_core_get_parents($space['target_id'], $bundle, NODE_PUBLISHED, FALSE, TRUE);
+      // Add current space to list
+      if ($bundle == OA_SPACE_TYPE) {
+        $nids[] = $space['target_id'];
       }
-      elseif ($type == 'user') {
-        $user = user_load($value['target_id']);
-        $user_name = format_username($user);
-        $links[] = l($user_name, "user/" . $user->uid);
+    }
+  }
+  else {
+    $values = field_get_items('node', $node, $field);
+    if (!empty($values)) {
+      foreach ($values as $value) {
+        $nids[] = $value['target_id'];
+      }
+    }
+  }
+  if (!empty($nids)) {
+    if ($type == 'node') {
+      $titles = oa_core_get_titles($nids, $bundle);
+      $links = $titles['links'];
+    }
+    elseif ($type == 'user') {
+      $links = array();
+      $query = db_select('realname', 'u');
+      $query->fields('u', array('uid', 'realname'))
+        ->condition('u.uid', $nids, 'IN');
+      $users = $query->execute()->fetchAllAssoc('uid');
+      foreach ($users as $uid => $user) {
+        $links[] = l($user->realname, "user/" . $uid);
       }
     }
   }
@@ -562,7 +714,7 @@ function oa_core_get_taxonomy_term_access($tid, $gid = NULL, $vocab_name = 'spac
   // When checking OG Permission, don't let Admin Group override this since all
   // Space admins typically have Admin Group but we want to limit types of subspaces
   // to be created.
-  if (!$gid || !module_exists('oa_subspaces')
+  if (!$gid || !module_exists('oa_subspaces') || $vocab_name == 'section_type'
     || user_access('administer group') || user_access('create oa_space content')
     || og_user_access('node', $gid, 'use any oa button space_type', NULL, FALSE, TRUE)) {
     $result = TRUE;
@@ -570,6 +722,14 @@ function oa_core_get_taxonomy_term_access($tid, $gid = NULL, $vocab_name = 'spac
   elseif ($gid && $user->uid) {
     $result = og_user_access('node', $gid, _oa_buttons_perm_name($vocab_name, $tid), NULL, FALSE, TRUE);
   }
+
+  // Allow other modules to override access to terms.
+  $context = array(
+    'tid' => $tid,
+    'gid' => $gid,
+    'vocab_name' => $vocab_name,
+  );
+  drupal_alter('oa_core_get_taxonomy_term_access', $result, $context);
 
   $cache[$tid][$gid][$vocab_name] = $result;
   return $result;

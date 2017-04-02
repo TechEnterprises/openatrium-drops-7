@@ -71,7 +71,7 @@ function oa_core_og_group_ref_process($element, &$form_state, &$complete_form) {
     if (empty($element['#required'])) {
       $element['#options'][0] = t(' - Any - ');
     }
-    if (($groups = oa_core_get_groups_by_user($user, 'node')) && ($titles = oa_core_get_titles($groups, '', 'title', array('title')))) {
+    if (($groups = oa_core_get_groups_by_user($user, 'node')) && ($titles = oa_core_get_titles($groups, '', 'title', array('title'), TRUE, 100))) {
       $element['#options'] += $titles['titles'];
     }
   }
@@ -95,12 +95,20 @@ function oa_core_exposed_og_group_ref_fix_cardinality($element, &$form_state, $f
 function oa_core_select2widget_entity_validate_field(&$element, &$form_state, $form) {
   // Legacy support, empty means current.
   if (!empty($element['#convert_empty_to_current']) && empty($element['#value'])) {
-    $element['#value'] = OA_SPACE_CURRENT;
+    // If filter is on an admin view or user view, default to show All spaces
+    if ((isset($form_state['view']->tag) && ($form_state['view']->tag == 'admin')) ||
+      isset($form_state['view']->argument['user'])) {
+      $element['#value'] = _oa_core_select2widget_all_label();
+    }
+    else {
+      $element['#value'] = OA_SPACE_CURRENT;
+    }
   }
   if (empty($element['#oa_core_in_pane_config'])) {
     $element['#value'] = str_replace(OA_SPACE_CURRENT, oa_core_get_space_context(), $element['#value']);
     $element['#value'] = str_replace(_oa_core_select2widget_current_label(), oa_core_get_space_context(), $element['#value']);
   }
+  $element['#value'] = str_replace(_oa_core_select2widget_all_label(), 'All', $element['#value']);
   $entity_labels = _oa_core_select2widget_process_entity_labels($element['#value']);
   $element['#attached']['js'][0]['data']['select2widgetajax']['elements'][$element['#id']]['init'] = $entity_labels;
   if (!empty($element['#oa_core_select2_set_value']) && $entity_labels && isset($form_state['values'])) {
@@ -129,7 +137,7 @@ function _oa_core_select2widget_process_entity_labels($value) {
       }
     }
     elseif (preg_match("/.+\((\d+)\)/", $target_entity, $matches)) {
-      $entity_labels[$matches[1]] = $target_entity;
+      $entity_labels[$matches[1]] = check_plain($target_entity);
     }
     elseif ($target_entity == 'All') {
       $entity_labels['All'] = _oa_core_select2widget_all_label();
@@ -166,6 +174,9 @@ function oa_core_oa_section_ref_process($element, &$form_state, &$complete_form)
       $group_ref = !is_array($element['#og_group_ref']) ? array($element['#og_group_ref']) : $element['#og_group_ref'];
       $group_ref_key = implode('--', $group_ref);
       $value = drupal_array_get_nested_value($form_state['input'], $group_ref);
+      if (is_null($value)) {
+        $value = drupal_array_get_nested_value($form_state['values'], $group_ref);
+      }
     }
     else {
       $value = -1;
@@ -173,7 +184,7 @@ function oa_core_oa_section_ref_process($element, &$form_state, &$complete_form)
     // Gid == 0 is no group.
     $gid = isset($value) && ($value === 0 || $value != -1) ? $value : oa_core_get_space_context();
     // Add options based on current selected group.
-    if ($gid && $sections = oa_core_space_sections($gid, NODE_PUBLISHED)) {
+    if ($gid && $sections = oa_core_space_sections($gid, NODE_PUBLISHED, NULL, array(), TRUE)) {
       foreach($sections as $nid => $title) {
         $element['#options'][$nid] = check_plain($title);
       }
@@ -264,7 +275,7 @@ function oa_core_oa_section_ref_replace($form, $form_state) {
     return $return;
   }
   // Replace the section element.
-  $section_element = _oa_core_oa_section_ref_process_find_element($form, $form_state['oa_section_ref_replace'][$field_name_triggering]['parents']);
+  $section_element = &_oa_core_oa_section_ref_process_find_element($form, $form_state['oa_section_ref_replace'][$field_name_triggering]['parents']);
   $return['#commands'][] = ajax_command_replace('#' . $section_element['#ajax_id'] . '-replace', render($section_element));
   return $return;
 }
@@ -274,13 +285,16 @@ function oa_core_oa_section_ref_replace($form, $form_state) {
  */
 function &_oa_core_oa_section_ref_process_find_element(&$form, $parents) {
   foreach (element_children($form) as $key) {
-    if (isset($form[$key]['#parents']) && $form[$key]['#parents'] == $parents) {
-      return $form[$key];
+    if (isset($form[$key]['#parents']) && $form[$key]['#parents'] === $parents) {
+      $element = &$form[$key];
+      return $element;
     }
     if ($element = &_oa_core_oa_section_ref_process_find_element($form[$key], $parents)) {
       return $element;
     }
   }
+  $element = NULL;
+  return $element;
 }
 
 /**

@@ -7,6 +7,8 @@
 define('OA_EVENTS_SEND_REMINDERS', 1);
 define('OA_EVENTS_REMINDER_INTERVAL', 1800);
 define('OA_EVENTS_DATE_FORMAT', 'MM/DD/YYYY');
+define('OA_EVENTS_DATE2_FORMAT', 'l, M j, Y');
+define('OA_EVENTS_TIME_FORMAT', 'g:iA');
 
 include_once 'oa_events.features.inc';
 include_once 'oa_events.theme.inc';
@@ -186,8 +188,13 @@ function oa_events_find_next_event($items) {
  */
 function oa_events_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
   $element = array();
-  if ($display['type'] == 'oa_events_addthis') {
-    $element[0]['#markup'] = oa_events_field_add_to_calendar_markup($entity->nid, $items, t('Add to Calendar'));
+  if (($display['type'] == 'oa_events_addthis') && variable_get('oa_events_addthis', FALSE)) {
+    if (isset($entity->panelizer_view_mode) && $entity->panelizer_view_mode == 'featured') {
+      $element[0]['#markup'] = '';
+    }
+    else {
+      $element[0]['#markup'] = oa_events_field_add_to_calendar_markup($entity->nid, $items, t('Add to Calendar'));
+    }
   }
   elseif ($display['type'] == 'oa_events_date_formatter') {
 
@@ -242,15 +249,17 @@ function oa_events_field_formatter_view($entity_type, $entity, $field, $instance
     $rrule = '';
     $is_all_day = date_all_day_field($field, $instance, $start_date, $end_date);
 
+    $date_format = variable_get('oa_events_date2_format', OA_EVENTS_DATE2_FORMAT);
+    $time_format = variable_get('oa_events_time_format', OA_EVENTS_TIME_FORMAT);
     // Create an array of time / date information for ease of use.
     $dates = array(
       'start' => array(
-        'time' => date_format_date($start_date, 'custom', 'g:iA'),
-        'date' => date_format_date($start_date, 'custom', 'l, M j, Y'),
+        'time' => date_format_date($start_date, 'custom', $time_format),
+        'date' => date_format_date($start_date, 'custom', $date_format),
       ),
       'end' => array(
-        'time' => date_format_date($end_date, 'custom', 'g:iA'),
-        'date' => date_format_date($end_date, 'custom', 'l, M j, Y'),
+        'time' => date_format_date($end_date, 'custom', $time_format),
+        'date' => date_format_date($end_date, 'custom', $date_format),
       ),
     );
 
@@ -419,10 +428,34 @@ function oa_events_oa_settings_form(&$form_state) {
     ),
   );
 
+  $form['oa_events_date2_format'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Date format for Event listings ?'),
+    '#default_value' => variable_get('oa_events_date2_format', OA_EVENTS_DATE2_FORMAT),
+  );
+
+  $form['oa_events_time_format'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Time format for Event listings ?'),
+    '#default_value' => variable_get('oa_events_time_format', OA_EVENTS_TIME_FORMAT),
+  );
+
+  $form['oa_events_addthis'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable the Add to Calendar button'),
+    '#description' => t('NOTE: Using the AddThisEvent service requires a license from addevent.com for non-personal use.'),
+    '#default_value' => variable_get('oa_events_addthis', FALSE),
+  );
+
   $form['oa_events_date_format'] = array(
     '#type' => 'textfield',
     '#title' => t('Date format for "Add to Calendar" ?'),
     '#default_value' => variable_get('oa_events_date_format', OA_EVENTS_DATE_FORMAT),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="oa_events_addthis"]' => array('checked' => TRUE),
+      ),
+    ),
   );
 
   $forms[] = array(
@@ -518,10 +551,12 @@ function oa_events_message_view($entity, $view_mode, $langcode) {
         $account = user_load($entity->uid);
         $attendee = &drupal_static('oa_event_message_attendee');
         $attendee = $account->mail;
-        $view->live_preview = TRUE;
+        // Turn off live_preview to prevent <pre> tags and check_plain and
+        // various other side effects of view previews
+        $view->live_preview = FALSE;
         $entity->email_attachments[] = array(
           'filecontent' => $view->preview($display_id, array($node->nid)),
-          'filename' => 'export-' . $node->nid . '.ics',
+          'filename' => 'event-' . $node->nid . '.ics',
           'filemime' => 'text/calendar',
         );
       }
@@ -536,6 +571,10 @@ function oa_events_message_view($entity, $view_mode, $langcode) {
 function oa_events_date_ical_export_vcalendar_alter($vcalendar, $view) {
   if (drupal_static('oa_event_message_attendee')) {
     $vcalendar->setMethod('REQUEST');
+    // Temporarily enable live_preview to prevent headers from being sent
+    // Because date_ical preview() uses this in it's render() function to send
+    // headers instead of doing it more properly in a theme like Views does.
+    $view->live_preview = TRUE;
   }
 }
 
@@ -549,3 +588,13 @@ function oa_events_date_ical_export_vevent_alter($vevent, $view, $event) {
   }
 }
 
+/**
+ * Implements hook_date_ical_export_post_render().
+ */
+function oa_events_date_ical_export_post_render($output, $view) {
+  if (drupal_static('oa_event_message_attendee')) {
+    // Disable live preview again
+    // See oa_events_date_ical_export_vcalendar_alter() above
+    $view->live_preview = FALSE;
+  }
+}

@@ -22,12 +22,12 @@
     </div>
 
     <div class="row">
-      <div class="col-md-6 radix-layouts-column1 panel-panel">
+      <div class="col-md-6 radix-layouts-column1 radix-layouts-content panel-panel">
         <div class="panel-panel-inner">
           <?php print $content['column1']; ?>
         </div>
       </div>
-      <div class="col-md-6 radix-layouts-column2 panel-panel">
+      <div class="col-md-6 radix-layouts-column2 radix-layouts-content panel-panel">
         <div class="panel-panel-inner">
           <?php print $content['column2']; ?>
         </div>
@@ -35,7 +35,7 @@
     </div>
 
     <div class="row">
-      <div class="col-md-12 radix-layouts-middle panel-panel">
+      <div class="col-md-12 radix-layouts-middle radix-layouts-content panel-panel">
         <div class="panel-panel-inner">
           <?php print $content['middle']; ?>
         </div>
@@ -43,12 +43,12 @@
     </div>
 
     <div class="row">
-      <div class="col-md-6 radix-layouts-secondcolumn1 panel-panel">
+      <div class="col-md-6 radix-layouts-secondcolumn1 radix-layouts-content panel-panel">
         <div class="panel-panel-inner">
           <?php print $content['secondcolumn1']; ?>
         </div>
       </div>
-      <div class="col-md-6 radix-layouts-secondcolumn2 panel-panel">
+      <div class="col-md-6 radix-layouts-secondcolumn2 radix-layouts-content panel-panel">
         <div class="panel-panel-inner">
           <?php print $content['secondcolumn2']; ?>
         </div>

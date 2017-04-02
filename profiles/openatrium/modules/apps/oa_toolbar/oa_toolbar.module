@@ -1,4 +1,10 @@
 <?php
+/**
+ * @file
+ * Code for the Open Atrium Toolbar feature.
+ */
+
+include_once 'oa_toolbar.features.inc';
 
 /**
  * @file
@@ -8,10 +14,8 @@
 /**
  * Implements hook_ctools_plugin_directory().
  */
-function oa_toolbar_ctools_plugin_directory($owner, $plugin_type) {
-  if ($owner == 'ctools') {
-    return "plugins/$plugin_type";
-  }
+function oa_toolbar_ctools_plugin_directory($module, $plugin) {
+  return 'plugins/' . $plugin;
 }
 
 /**
@@ -76,17 +80,21 @@ function oa_toolbar_oa_settings_form(&$form_state) {
 }
 
 /**
- * Implements template_preprocess_page().
+ * Implements hook_preprocess_html().
  */
-function oa_toolbar_preprocess_page(&$vars) {
-  drupal_add_js(drupal_get_path('module', 'oa_toolbar') . '/js/oa-toolbar.js');
+function oa_toolbar_preprocess_html(&$vars) {
   $settings = array(
     'mouseover' => variable_get('oa_toolbar_mouseover', FALSE),
   );
   drupal_add_js(array('oa_toolbar' => $settings), 'setting');
-  
+  drupal_add_js(drupal_get_path('module', 'oa_toolbar') . '/js/oa-toolbar.js');
+}
+
+/**
+ * Implements template_preprocess_page().
+ */
+function oa_toolbar_preprocess_page(&$vars) {
   $vars['oa_toolbar_class'] = 'navbar-inverse';
-  $vars['oa_toolbar_btn_class'] = variable_get('oa_toolbar_style', 0) ? '' : 'btn-inverse';
   $vars['oa_toolbar_sticky'] = 'navbar-fixed-top';
 }
 
@@ -103,7 +111,7 @@ function oa_toolbar_block_info() {
     'cache' => DRUPAL_CACHE_PER_USER,
   );
   $blocks['oa_toolbar_menu_button'] = array(
-    'info' => t('Open Atrium Toolbar Menu Button'),
+    'info' => t('Open Atrium Toolbar Menu Button (deprecated, use Drupal Admin menu button)'),
     'cache' => DRUPAL_CACHE_GLOBAL,
   );
   $blocks['oa_breadcrumb'] = array(
@@ -134,7 +142,11 @@ function oa_toolbar_block_view($delta = '') {
       if (module_exists('navbar')) {
         $tree = navbar_get_menu_tree();
         if (!empty($tree)) {
-          $block['content'] = theme('oa_toolbar_menu_button');
+          $vars = array(
+            'caption' => t('Admin'),
+            'oa_toolbar_btn_class' => variable_get('oa_toolbar_style', 0) ? '' : 'btn-inverse',
+          );
+          $block['content'] = theme('oa_toolbar_menu_button', $vars);
         }
       }
       break;
@@ -183,6 +195,26 @@ function oa_toolbar_theme() {
       'template' => 'oa-space-menu',
       'path' => $path,
     ),
+    'oa_space_nav' => array(
+      'variables' => array('menu' => NULL),
+      'template' => 'oa-space-nav',
+      'path' => $path,
+    ),
+    'oa_separator' => array(
+      'variables' => array('menu' => NULL),
+      'template' => 'oa-separator',
+      'path' => $path,
+    ),
+    'oa_space_structure' => array(
+      'variables' => array('menu' => NULL),
+      'template' => 'oa-space-structure',
+      'path' => $path,
+    ),
+    'oa_recent' => array(
+      'variables' => array('menu' => NULL),
+      'template' => 'oa-recent',
+      'path' => $path,
+    ),
   );
 }
 
@@ -210,10 +242,13 @@ function oa_toolbar_get_jump_links($base, $url_query = array()) {
     ->condition('v.machine_name', $vocab_name);
   $terms = $query->execute()->fetchAllKeyed();
 
+  // Allow altering the terms that are shown via jump links.
+  drupal_alter('oa_toolbar_jump_links', $terms);
+
   if (count($terms) > 1) {
     $links = array();
     foreach ($terms as $tid => $name) {
-      if (oa_core_get_taxonomy_term_access($tid)) {
+      if (oa_core_get_taxonomy_term_access($tid, NULL, $vocab_name)) {
         $links[] = array(
           'title' => t('Create new @type', array('@type' => $name)),
           'href' => "node/add/{$node_type}/$tid",
@@ -243,6 +278,7 @@ function template_preprocess_oa_navigation(&$vars) {
         // Render the links as Radix defaults.
         $menu[$mlid]['#theme'] = 'menu_link__oa_navigation';
       }
+      oa_core_body_classes('oa-main-menu');
     }
     $vars['menu'] = $menu;
   }
@@ -254,6 +290,8 @@ function template_preprocess_oa_navigation(&$vars) {
 function template_preprocess_oa_toolbar(&$vars) {
   global $user;
 
+  $vars['oa_toolbar_btn_class'] = variable_get('oa_toolbar_style', 0) ? '' : 'btn-inverse';
+
   // Separators
   $vars['oa_toolbar_separator'] = t('&gt;');
   $vars['home_url'] = url('<front>', array('absolute' => TRUE));
@@ -262,6 +300,7 @@ function template_preprocess_oa_toolbar(&$vars) {
   $space = NULL;
   $space_id = oa_core_get_space_context();
   $node = menu_get_object();
+  oa_core_add_node_class($node);
   $front_panel = drupal_is_front_page() && !(isset($node) && ($node->type == OA_SPACE_TYPE));
 
   if ($front_panel) {
@@ -285,6 +324,7 @@ function template_preprocess_oa_toolbar(&$vars) {
     $title = $space->title;
     $space_type = $space->type;
     $subspace_type_names = ($space_type == OA_SPACE_TYPE) ? t('Subspaces') : t('Subgroups');
+    oa_core_add_node_class($space);
     $vars['space_label'] = check_plain($title);
     $vars['space_url'] = url('node/' . $space_id);
     if (isset($vars['show_parents'])) {
@@ -298,7 +338,7 @@ function template_preprocess_oa_toolbar(&$vars) {
         if (count($parents) > 1) {
           $list = oa_core_truncate_list($parents, 15);
           foreach ($list as $nid => $title) {
-            $list[$nid] = check_plain($title);
+            $list[$nid] = l($title, 'node/' . $nid);
           }
           $vars['parent_list'] = theme('item_list', array(
             'items' => $list,
@@ -424,14 +464,20 @@ function template_preprocess_oa_toolbar(&$vars) {
       $section_url = url('node/' . $space_id);
       $items = array();
       // grab the titles of the sections for the current space
-      $sections = oa_core_space_sections($space_id, NODE_PUBLISHED);
+      $sections = oa_core_space_sections($space_id, NODE_PUBLISHED, FALSE, array('field_oa_section|tid'));
       if (!empty($sections)) {
         // check for match with current section id
-        foreach ($sections as $sid => $title) {
-          $items[] = l($title, 'node/' . $sid);
+        foreach ($sections as $sid => $section) {
           if ($sid == $current_section) {
-            $section_name = $title;
+            oa_core_add_taxonomy_class($section->field_oa_section_tid);
+            $section_name = $section->title;
             $section_url = url('node/' . $sid);
+            $items[] = l($section->title, 'node/' . $sid, array(
+              'attributes' => array('class' => array('active')),
+            ));
+          }
+          else {
+            $items[] = l($section->title, 'node/' . $sid);
           }
         }
       }
@@ -502,7 +548,6 @@ function template_preprocess_oa_toolbar(&$vars) {
     unset($vars['home_spaces']);
   }
 
-  $vars['oa_toolbar_btn_class'] = variable_get('oa_toolbar_style', 0) ? '' : 'btn-inverse';
   if (variable_get('oa_breadcrumb_menu', FALSE)) {
     $vars['mainmenu'] = theme('oa_navigation', array(
       'menu_name' => 'main-menu',
@@ -525,10 +570,33 @@ function template_preprocess_oa_breadcrumb(&$vars) {
 function template_preprocess_oa_user_badge(&$vars) {
   global $user;
 
+  $vars['oa_toolbar_btn_class'] = variable_get('oa_toolbar_style', 0) ? '' : 'btn-inverse';
+
   if ($user->uid) {
     $user = user_load($user->uid);
     if (module_exists('oa_users')) {
       $vars = array_merge($vars, oa_users_build_user_details($user));
+
+      $links = array();
+      // Build list of user tasks for the current user
+      $user_pages = explode("\n", variable_get('oa_user_config_pages', ''));
+      foreach ($user_pages as $path) {
+        if (strpos(trim($path), 'user/*/') === 0) {
+          $new_path = str_replace('user/*/', 'user/' . $user->uid . '/', trim($path));
+          if (drupal_valid_path($new_path)) {
+            $router = menu_get_item(trim($new_path));
+            $link = array(
+              'title' => $router['title'],
+              'href' => $new_path,
+            );
+            $links[] = $link;
+          }
+        }
+      }
+      $vars['other_links'] = theme('links', array(
+        'links' => $links,
+        'attributes' => array('class' => array('oa-user-links')),
+      ));
 
       // Turn the links from oa_users_build_user_details() into a proper render
       // array so that it can be modified.
@@ -558,7 +626,6 @@ function template_preprocess_oa_user_badge(&$vars) {
   else {
     $vars['login'] = url('user/login');
   }
-  $vars['oa_toolbar_btn_class'] = variable_get('oa_toolbar_style', 0) ? '' : 'btn-inverse';
 }
 
 /**
@@ -566,8 +633,6 @@ function template_preprocess_oa_user_badge(&$vars) {
  */
 function template_preprocess_oa_toolbar_menu_button(&$vars) {
   drupal_add_js(drupal_get_path('module', 'oa_toolbar') . '/js/toolbar-menu-toggle.js');
-
-  $vars['oa_toolbar_btn_class'] = 'btn-inverse';
 }
 
 /**
@@ -583,6 +648,11 @@ function oa_toolbar_form_og_menu_single_menu_edit_form_alter(&$form, &$form_stat
     '#title' => 'Show space menu',
     '#default_value' => variable_get('oa_space_menu_' . $space_id, TRUE),
   );
+  $form['oa_space_menu_home'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Show Home link in space menu',
+    '#default_value' => variable_get('oa_space_menu_home_' . $space_id, TRUE),
+  );
   $form['#space'] = $space_id;
   $form['#submit'][] = 'oa_toolbar_space_menu_submit';
 }
@@ -594,26 +664,81 @@ function oa_toolbar_space_menu_submit($form, &$form_state) {
   $space_id = $form['#space'];
   if ($space_id && isset($form_state['values']['oa_space_menu'])) {
     variable_set('oa_space_menu_' . $space_id, $form_state['values']['oa_space_menu']);
+    variable_set('oa_space_menu_home_' . $space_id, $form_state['values']['oa_space_menu_home']);
   }
 }
 
 /**
- * Implements hook_oa_responsive_regions_positions_alter().
+ * Implements hook_oa_clone_group_metadata().
  */
-function oa_toolbar_oa_responsive_regions_positions_alter(&$positions) {
-  // We will keep the top position for the oa navbar so we unset it here.
-  unset($positions['top']);
+function oa_toolbar_oa_clone_group_metadata($node, $original_nid) {
+  $old_space_menu = variable_get('oa_space_menu_' . $original_nid, TRUE);
+  variable_set('oa_space_menu_' . $node->nid, $old_space_menu);
+  $old_space_menu = variable_get('oa_space_menu_home_' . $original_nid, TRUE);
+  variable_set('oa_space_menu_home_' . $node->nid, $old_space_menu);
 }
 
 /**
- * Implements hook_oa_responsive_regions_alter().
+ * Return a list of parent links to be shown in a toolbar widget
+ * @param $space_id
+ * @param string $space_type
  */
-function oa_toolbar_oa_responsive_regions_alter(&$regions) {
-  // Manually add our top region here.
-  $regions['top'] = array(
-    'settings' => array(
-      'position' => 'top',
-    ),
-    'icon' => 'icon-list',
-  );
+function oa_toolbar_get_parent_list($space_id, $space_type = OA_SPACE_TYPE) {
+  $cache = &drupal_static(__FUNCTION__, array());
+  if (isset($cache[$space_id])) {
+    return $cache[$space_id];
+  }
+
+  // Can't just call oa_core_get_parents directly since it doesn't return results
+  // in the order needed for display.
+  $parents = array();
+  $parent_id = $space_id;
+  do {
+    $parent = oa_core_get_parents_with_titles($parent_id, $space_type, NODE_PUBLISHED);
+    if (!empty($parent)) {
+      $keys = array_keys($parent);
+      $parents = array_merge($parents, $keys);
+      $parent_id = current($keys);
+    }
+  } while (!empty($parent));
+  $parents = array_reverse($parents);
+
+  $items = array();
+  if ($parents) {
+    $items = oa_core_get_titles($parents, $space_type, '');
+  }
+
+  $cache[$space_id] = $items;
+  return $items;
+}
+
+/**
+ * Return a list of subspace links to be shown in a toolbar widget
+ * @param $space_id
+ * @param string $space_type
+ */
+function oa_toolbar_get_subspace_list($space_id, $space_type = OA_SPACE_TYPE) {
+  $items = array();
+  $subspaces = oa_core_get_groups_by_parent($space_id, $space_type, NODE_PUBLISHED);
+  if (!empty($subspaces)) {
+    $items = oa_core_get_titles($subspaces, $space_type);
+  }
+  return $items;
+}
+
+/**
+ * Return a list of section links to be shown in a toolbar widget
+ * @param $space_id
+ */
+function oa_toolbar_get_section_list($space_id) {
+  $items = array();
+  $sections = oa_core_space_sections($space_id, NODE_PUBLISHED);
+  if (!empty($sections)) {
+    $items['titles'] = $sections;
+    foreach ($sections as $nid => $title) {
+      $items['links'][$nid] = l($title, 'node/' . $nid);
+      $items['ids'][$nid] = $nid;
+    }
+  }
+  return $items;
 }

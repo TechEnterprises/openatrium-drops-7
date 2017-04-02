@@ -67,6 +67,11 @@ function oa_messages_oa_user_settings_form_submit($form_state, $user) {
   // Set email type.
   $return['oa_messages']['email_type'] = $form_state['values']['oa_messages']['delivery']['email_type'];
 
+  // Set existing message_notifications value so that values are not lost.
+  if (isset($user->data['oa_messages']['message_notifications'])) {
+    $return['oa_messages']['message_notifications'] = $user->data['oa_messages']['message_notifications'];
+  }
+
   if (isset($form_state['values']['oa_messages']['message_notifications'])) {
     $values = $form_state['values']['oa_messages']['message_notifications'];
 
@@ -305,6 +310,8 @@ function oa_messages_ajax_load_notification_methods($form, &$form_state) {
 }
 
 /**
+ *  Implements hook_oa_settings_form().
+ *
  * Add plugin-specific configuration to main Open Atrium settings form
  * @param $form_state
  * @param return array - array of subforms render array
@@ -318,6 +325,20 @@ function oa_messages_oa_settings_form(&$form_state) {
     '#title' => 'Enable notifications',
     '#description' => 'If off, no notifications will be sent.  If on, notifications are controlled by individual user settings.',
     '#default_value' => variable_get('oa_messages_notifications', TRUE),
+  );
+
+  $form['oa_messages_publish_notifications'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Enable notifications for Publishing content',
+    '#description' => 'If off, no notifications will be sent for Publish status change of content with no other changes (affects the system only if Enable Notifications is checked).',
+    '#default_value' => variable_get('oa_messages_publish_notifications', FALSE),
+  );
+
+  $form['oa_messages_unpublish_notifications'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Enable notifications for Un-publishing content',
+    '#description' => 'If off, no notifications will be sent for Un-publish status change of content with no other changes (affects the system only if Enable Notifications is checked).',
+    '#default_value' => variable_get('oa_messages_unpublish_notifications', FALSE),
   );
 
   $forms[] = array(

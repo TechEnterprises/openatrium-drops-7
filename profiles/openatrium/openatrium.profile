@@ -11,19 +11,19 @@ include_once 'install_from_db/install_from_db.profile';
  * Implements hook_appstore_stores_info().
  */
 function openatrium_apps_servers_info() {
- $info =  drupal_parse_info_file(dirname(__file__) . '/openatrium.info');
- return array(
-   'openatrium' => array(
-     'title' => 'OpenAtrium',
-     'description' => "Apps for the OpenAtrium distribution",
-     // @CHANGE this to -stable for stable releases.
-     'manifest' => 'http://appserver.openatrium.com/app/query/openatrium-development',
-     'profile' => 'openatrium',
-     'profile_version' => isset($info['version']) ? $info['version'] : '7.x-2.x-dev',
-     'server_name' => !empty($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : '',
-     'server_ip' => !empty($_SERVER['SERVER_ADDR']) ? $_SERVER['SERVER_ADDR'] : '',
-   ),
- );
+  $info = drupal_parse_info_file(dirname(__file__) . '/openatrium.info');
+  $version = !empty($info['version']) ? 'openatrium-stable' : 'openatrium-development';
+  return array(
+    'openatrium' => array(
+      'title' => 'OpenAtrium',
+      'description' => "Apps for the OpenAtrium distribution",
+      'manifest' => 'http://appserver.openatrium.com/app/query/' . $version,
+      'profile' => 'openatrium',
+      'profile_version' => isset($info['version']) ? $info['version'] : '7.x-2.x-dev',
+      'server_name' => !empty($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : '',
+      'server_ip' => !empty($_SERVER['SERVER_ADDR']) ? $_SERVER['SERVER_ADDR'] : '',
+    ),
+  );
 }
 
 /**
@@ -33,6 +33,20 @@ function openatrium_form_install_configure_form_alter(&$form, &$form_state) {
   openatrium_remove_message('offers a wide range of customization options', 'warning');
   openatrium_remove_message('The image resize filter has been installed', 'warning');
   openatrium_remove_message('To use menu blocks, find the "Add menu block');
+  $form['#validate'][] = 'openatrium_clean_urls_validate';
+}
+
+/**
+ * Validate that clean URLs work.
+ */
+function openatrium_clean_urls_validate($form, &$form_state) {
+  // We cannot test for clean urls during hook_requirments during intall due to
+  // lack of menu to test a url for, so we test here instead.
+  // The javascript enables clean urls automatically if they work.
+  // Could have just required clean_url, but wanted to customize the error.
+  if (empty($form_state['values']['clean_url'])) {
+    form_set_error('clean_url', t('Clean Urls must be available and enabled to use OpenAtrium.'));
+  }
 }
 
 /**

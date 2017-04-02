@@ -36,12 +36,12 @@
           </div>
         </div>
         <div class="row">
-          <div class="col-md-6 radix-layouts-contentcolumn1 panel-panel">
+          <div class="col-md-6 radix-layouts-contentcolumn1 radix-layouts-content panel-panel">
             <div class="panel-panel-inner">
               <?php print $content['contentcolumn1']; ?>
             </div>
           </div>
-          <div class="col-md-6 radix-layouts-contentcolumn2 panel-panel">
+          <div class="col-md-6 radix-layouts-contentcolumn2 radix-layouts-content panel-panel">
             <div class="panel-panel-inner">
               <?php print $content['contentcolumn2']; ?>
             </div>

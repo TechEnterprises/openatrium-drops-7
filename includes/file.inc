@@ -273,7 +273,9 @@ function file_default_scheme() {
  *   The normalized URI.
  */
 function file_stream_wrapper_uri_normalize($uri) {
-  $scheme = file_uri_scheme($uri);
+  // Inline file_uri_scheme() function call for performance reasons.
+  $position = strpos($uri, '://');
+  $scheme = $position ? substr($uri, 0, $position) : FALSE;
 
   if ($scheme && file_stream_wrapper_valid_scheme($scheme)) {
     $target = file_uri_target($uri);
@@ -1789,7 +1791,7 @@ function file_validate_is_image(stdClass $file) {
 /**
  * Verifies that image dimensions are within the specified maximum and minimum.
  *
- * Non-image files will be ignored. If a image toolkit is available the image
+ * Non-image files will be ignored. If an image toolkit is available the image
  * will be scaled to fit within the desired maximum dimensions.
  *
  * @param $file
@@ -2026,7 +2028,7 @@ function file_download() {
  *
  * @see file_transfer()
  * @see file_download_access()
- * @see hook_file_downlaod()
+ * @see hook_file_download()
  */
 function file_download_headers($uri) {
   // Let other modules provide headers and control access to the file.
@@ -2108,9 +2110,18 @@ function file_download_access($uri) {
  *   'filename', and 'name' members corresponding to the matching files.
  */
 function file_scan_directory($dir, $mask, $options = array(), $depth = 0) {
+  // By default, do not check for files in common special-purpose directories.
+  // The folders here are front-end related and they have been added to avoid
+  // issues with Drupal recursive scanning. In this case, we added node_modules
+  // and bower_components. This also improves performance on frontend builds.
+  $ignore_directories = variable_get('drupal_file_scan_ignore_directories', array(
+    'node_modules',
+    'bower_components',
+  ));
+  $no_mask = '/^(\..*)|' . implode('|', $ignore_directories) . '$/';
   // Merge in defaults.
   $options += array(
-    'nomask' => '/(\.\.?|CVS)$/',
+    'nomask' => $no_mask,
     'callback' => 0,
     'recurse' => TRUE,
     'key' => 'uri',

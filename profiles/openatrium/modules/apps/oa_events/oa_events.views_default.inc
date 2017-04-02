@@ -120,7 +120,7 @@ function oa_events_views_default_views() {
   $handler->display->display_options['fields']['field_oa_media']['delta_offset'] = '0';
   /* Field: Flags: Flag link */
   $handler->display->display_options['fields']['ops']['id'] = 'ops';
-  $handler->display->display_options['fields']['ops']['table'] = 'flag_content';
+  $handler->display->display_options['fields']['ops']['table'] = 'flagging';
   $handler->display->display_options['fields']['ops']['field'] = 'ops';
   $handler->display->display_options['fields']['ops']['relationship'] = 'flag_content_rel';
   $handler->display->display_options['fields']['ops']['label'] = '';
@@ -215,7 +215,7 @@ function oa_events_views_default_views() {
   $handler->display->display_options['fields']['field_oa_address']['id'] = 'field_oa_address';
   $handler->display->display_options['fields']['field_oa_address']['table'] = 'field_data_field_oa_address';
   $handler->display->display_options['fields']['field_oa_address']['field'] = 'field_oa_address';
-  $handler->display->display_options['fields']['field_oa_address']['label'] = '';
+  $handler->display->display_options['fields']['field_oa_address']['label'] = 'Where';
   $handler->display->display_options['fields']['field_oa_address']['alter']['text'] = '[field_oa_address]
 [field_oa_event_link]';
   $handler->display->display_options['fields']['field_oa_address']['element_label_colon'] = FALSE;
@@ -425,7 +425,7 @@ function oa_events_views_default_views() {
   $handler->display->display_options['filters']['field_oa_date_value']['default_date'] = 'now';
   /* Filter criterion: Flags: Flagged */
   $handler->display->display_options['filters']['flagged']['id'] = 'flagged';
-  $handler->display->display_options['filters']['flagged']['table'] = 'flag_content';
+  $handler->display->display_options['filters']['flagged']['table'] = 'flagging';
   $handler->display->display_options['filters']['flagged']['field'] = 'flagged';
   $handler->display->display_options['filters']['flagged']['relationship'] = 'flag_content_rel';
   $handler->display->display_options['filters']['flagged']['value'] = '0';
@@ -664,7 +664,7 @@ function oa_events_views_default_views() {
   );
   /* Filter criterion: Flags: Flagged */
   $handler->display->display_options['filters']['flagged']['id'] = 'flagged';
-  $handler->display->display_options['filters']['flagged']['table'] = 'flag_content';
+  $handler->display->display_options['filters']['flagged']['table'] = 'flagging';
   $handler->display->display_options['filters']['flagged']['field'] = 'flagged';
   $handler->display->display_options['filters']['flagged']['relationship'] = 'flag_content_rel';
   $handler->display->display_options['filters']['flagged']['value'] = '0';
@@ -801,7 +801,7 @@ function oa_events_views_default_views() {
   );
   /* Filter criterion: Flags: Flagged */
   $handler->display->display_options['filters']['flagged']['id'] = 'flagged';
-  $handler->display->display_options['filters']['flagged']['table'] = 'flag_content';
+  $handler->display->display_options['filters']['flagged']['table'] = 'flagging';
   $handler->display->display_options['filters']['flagged']['field'] = 'flagged';
   $handler->display->display_options['filters']['flagged']['relationship'] = 'flag_content_rel';
   $handler->display->display_options['filters']['flagged']['value'] = '0';
@@ -916,7 +916,7 @@ function oa_events_views_default_views() {
   $handler->display->display_options['filters']['field_oa_date_value']['default_date'] = 'today';
   /* Filter criterion: Flags: Flagged */
   $handler->display->display_options['filters']['flagged']['id'] = 'flagged';
-  $handler->display->display_options['filters']['flagged']['table'] = 'flag_content';
+  $handler->display->display_options['filters']['flagged']['table'] = 'flagging';
   $handler->display->display_options['filters']['flagged']['field'] = 'flagged';
   $handler->display->display_options['filters']['flagged']['relationship'] = 'flag_content_rel';
   $handler->display->display_options['filters']['flagged']['value'] = '0';
@@ -1061,7 +1061,7 @@ function oa_events_views_default_views() {
   );
   /* Filter criterion: Flags: Flagged */
   $handler->display->display_options['filters']['flagged']['id'] = 'flagged';
-  $handler->display->display_options['filters']['flagged']['table'] = 'flag_content';
+  $handler->display->display_options['filters']['flagged']['table'] = 'flagging';
   $handler->display->display_options['filters']['flagged']['field'] = 'flagged';
   $handler->display->display_options['filters']['flagged']['relationship'] = 'flag_content_rel';
   $handler->display->display_options['filters']['flagged']['value'] = '0';
@@ -1220,7 +1220,7 @@ function oa_events_views_default_views() {
   );
   /* Filter criterion: Flags: Flagged */
   $handler->display->display_options['filters']['flagged']['id'] = 'flagged';
-  $handler->display->display_options['filters']['flagged']['table'] = 'flag_content';
+  $handler->display->display_options['filters']['flagged']['table'] = 'flagging';
   $handler->display->display_options['filters']['flagged']['field'] = 'flagged';
   $handler->display->display_options['filters']['flagged']['relationship'] = 'flag_content_rel';
   $handler->display->display_options['filters']['flagged']['value'] = '0';
@@ -1302,7 +1302,7 @@ function oa_events_views_default_views() {
   $handler = $view->new_display('panel_pane', 'Weekly Calendar', 'oa_calendar_week');
   $handler->display->display_options['defaults']['style_plugin'] = FALSE;
   $handler->display->display_options['style_plugin'] = 'fullcalendar';
-  $handler->display->display_options['style_options']['defaultView'] = 'agendaWeek';
+  $handler->display->display_options['style_options']['defaultView'] = 'basicWeek';
   $handler->display->display_options['style_options']['left'] = 'title';
   $handler->display->display_options['style_options']['center'] = '';
   $handler->display->display_options['style_options']['right'] = 'today prev,next';
@@ -1310,7 +1310,7 @@ function oa_events_views_default_views() {
   $handler->display->display_options['style_options']['timeformatMonth'] = 'h(:mm)t';
   $handler->display->display_options['style_options']['columnformatDay'] = 'dddd, MMM d, yyyy';
   $handler->display->display_options['style_options']['theme'] = FALSE;
-  $handler->display->display_options['style_options']['contentHeight'] = 480;
+  $handler->display->display_options['style_options']['contentHeight'] = 200;
   $handler->display->display_options['style_options']['fullcalendar_create']['node_type'] = 'oa_event';
   $handler->display->display_options['style_options']['fullcalendar_options']['firstHour'] = 8;
   $handler->display->display_options['defaults']['style_options'] = FALSE;
@@ -1347,7 +1347,7 @@ function oa_events_views_default_views() {
   $handler->display->display_options['style_options']['disable_webcal'] = TRUE;
   $handler->display->display_options['row_plugin'] = 'date_ical';
   $handler->display->display_options['row_options']['date_field'] = 'field_data_field_oa_date.field_oa_date_value';
-  $handler->display->display_options['row_options']['summary_field'] = 'field_data_body.body';
+  $handler->display->display_options['row_options']['summary_field'] = 'default_title';
   $handler->display->display_options['row_options']['location_field'] = 'field_data_field_oa_address.field_oa_address';
   $handler->display->display_options['path'] = 'calendar/%/export.ics';
   $handler->display->display_options['displays'] = array(
@@ -1493,7 +1493,7 @@ function oa_events_views_default_views() {
   $handler->display->display_options['filters']['field_oa_date_value2']['default_date'] = 'today';
   /* Filter criterion: Flags: Flagged */
   $handler->display->display_options['filters']['flagged']['id'] = 'flagged';
-  $handler->display->display_options['filters']['flagged']['table'] = 'flag_content';
+  $handler->display->display_options['filters']['flagged']['table'] = 'flagging';
   $handler->display->display_options['filters']['flagged']['field'] = 'flagged';
   $handler->display->display_options['filters']['flagged']['relationship'] = 'flag_content_rel';
   $handler->display->display_options['filters']['flagged']['value'] = '0';

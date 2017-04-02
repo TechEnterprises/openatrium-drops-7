@@ -1,5 +1,14 @@
+#comments {
+  clear: both;
+}
+
 .oa-comment i {
   font-size: 1.2em;
+}
+
+.oa-comment .oa-user-picture img {
+  height: 30px;
+  width: 30px;
 }
 
 form.comment-form .comment-reply-post-button {
@@ -14,7 +23,7 @@ form.comment-form .comment-reply-post-button input.form-submit {
 }
 
 form.comment-form .reply-comment-parent {
-  padding: 5%;
+  padding: 0 150px 1em 5em;
 }
 
 form.comment-form .text-format-wrapper .clearfix:after {
@@ -22,7 +31,7 @@ form.comment-form .text-format-wrapper .clearfix:after {
 }
 
 #modal-content form.comment-form {
-  margin-top: 3%;
+  margin-top: 1em;
 }
 
 #modal-content form.comment-form .comment-reply-post-button {
@@ -96,7 +105,7 @@ form.comment-form .text-format-wrapper .clearfix:after {
 }
 
 /*Hide the date on comments when on xs screen.*/
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .comment-created-date {
     display: none;
   }
@@ -147,4 +156,14 @@ table.comment-alter-diff {
 
 .accordion-toggle .oa-list-header .oa-comment-reply-body p {
   cursor: pointer;
+}
+
+.indented .indented .indented .indented .indented {
+  margin-left: 0;
+}
+
+@media (max-width: 767px) {
+  .indented {
+    margin-left: 0 !important;
+  }
 }

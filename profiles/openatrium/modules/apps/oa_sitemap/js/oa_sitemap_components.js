@@ -68,7 +68,7 @@ angular.module('oaSitemapComponents', ['oaSitemapFilters',])
       },
       controller: function($scope, $element, $attrs) {
         $scope.sectionClass = function(section) {
-          return (section.visibility) ? 'oa-border-green' : 'oa-border-red';
+          return (section.visibility) ? 'oa-icon-green' : 'oa-icon-red';
         };
       },
       templateUrl: oaSitemapAngularTemplate('oa-section-box'),
@@ -78,7 +78,7 @@ angular.module('oaSitemapComponents', ['oaSitemapFilters',])
     /**
      * This defines a reusable add button.
      */
-    .directive('oaSitemapAdd', function() {
+    .directive('oaSitemapAdd', ['$timeout', function($timeout) {
     return {
       transclude: true,
       scope: {
@@ -96,8 +96,13 @@ angular.module('oaSitemapComponents', ['oaSitemapFilters',])
         newTitle: '&',
       },
       templateUrl: oaSitemapAngularTemplate('oa-sitemap-add'),
-      replace: true
+      replace: true,
+      link: function link($scope, element, attrs) {
+        $timeout(function() {
+          $scope.$emit('oaSitemapRefresh');
+        }, 0);
+      }
     };
-    })
+    }])
 
 }(jQuery));

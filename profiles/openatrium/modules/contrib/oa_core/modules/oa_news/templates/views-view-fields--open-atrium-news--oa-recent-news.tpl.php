@@ -26,7 +26,7 @@
 ?>
 <div class='oa-list oa-news clearfix'>
   <?php if (!empty($field_user_picture)): ?>
-  <div class='pull-right'>
+  <div class='user-picture pull-right'>
     <?php print $field_user_picture; ?>
   </div>
   <?php endif; ?>
@@ -38,11 +38,20 @@
       </span>
     <?php endif; ?>
     <div class='oa-news-posted'>
-      <?php print t('Posted by ') . $name . t(' on ') . $created; ?>
-      <?php if (!empty($edit_node)): ?>
-        <span>
-        &nbsp;<?php print $edit_node; ?>
+      <span class="user-info">
+        <?php if (!empty($name)): ?>
+        <?php print t('By '); ?>
+        <?php print $name; ?>
+        <?php endif; ?>
+        <?php if (!empty($created)): ?>
+        <?php print t(' on '); ?>
+        <span class="oa-date"><?php print $created; ?></span>
+        <?php endif; ?>
       </span>
+      <?php if (!empty($edit_node)): ?>
+        <span class="oa-edit-node">
+          <?php print $edit_node; ?>
+        </span>
       <?php endif; ?>
     </div>
   </div>

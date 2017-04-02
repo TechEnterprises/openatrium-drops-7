@@ -33,7 +33,6 @@ class views_content_plugin_display_panel_pane extends views_plugin_display {
         'path_override'   => array('default' => FALSE),
         'title_override'  => array('default' => FALSE),
         'exposed_form'    => array('default' => FALSE),
-        'exposed_form_configure'    => array('default' => FALSE),
         'fields_override' => array('default' => FALSE),
        ),
     );
@@ -173,7 +172,6 @@ class views_content_plugin_display_panel_pane extends views_plugin_display {
           'path_override' => t('Path override'),
           'title_override' => t('Title override'),
           'exposed_form' => t('Use exposed widgets form as pane configuration'),
-          'exposed_form_configure' => t('Exposed Form'),
           'fields_override' => t('Fields override'),
         );
 
@@ -479,6 +477,7 @@ class views_content_plugin_display_panel_pane extends views_plugin_display {
    * and views_content_views_pre_view
    */
   function pane_process_conf() {
+    ctools_include('context');
     $conf = $this->get_option('pane_conf');
     if (!$conf) {
       // See if dom id has been cached and get conf from there.
@@ -546,7 +545,6 @@ class views_content_plugin_display_panel_pane extends views_plugin_display {
     }
 
     $this->view->set_arguments($args);
-
     $allow = $this->get_option('allow');
 
     if (!empty($conf['path'])) {
@@ -633,6 +631,12 @@ class views_content_plugin_display_panel_pane extends views_plugin_display {
       // Preserve op so reset works.
       if (isset($current_exposed['op'])) {
         $exposed_input['op'] = $current_exposed['op'];
+      }
+
+      foreach ($exposed_input as $filter_name => $filter_value) {
+        if (!is_array($filter_value)) {
+          $exposed_input[$filter_name] = ctools_context_keyword_substitute($filter_value, array(), $contexts);
+        }
       }
       $this->view->set_exposed_input($exposed_input);
     }

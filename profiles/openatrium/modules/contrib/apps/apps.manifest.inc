@@ -371,14 +371,28 @@ function apps_retrieve_app_image($app, $url, $title = '', $alt = '') {
     }
   }
 
-  $request = drupal_http_request($url, array(), 'GET');
-  if (isset($request->data) && $request->code == 200) {
+  $contents = NULL;
+  if ($is_local && !empty($check['path']) && file_exists($check['path'])) {
+    // Grab the local file data.
+    $contents = file_get_contents($check['path']);
+    $mime = file_get_mimetype($check['path']);
+  }
+  else {
+    // Otherwise grab remote file data.
+    $request = drupal_http_request($url, array(), 'GET');
+    if (isset($request->data) && $request->code == 200) {
+      $contents = $request->data;
+      $mime = $request->headers['content-type'];
+    }
+  }
+
+  if (isset($contents)) {
     $dir_uri = file_build_uri($dir);
     file_prepare_directory($dir_uri, FILE_CREATE_DIRECTORY || FILE_MODIFY_PERMISSIONS);
 
     $file = new stdClass();
-    $file->filemime = $request->headers['content-type'];
-    $file->uri = file_unmanaged_save_data($request->data, $uri, FILE_EXISTS_REPLACE);
+    $file->filemime = $mime;
+    $file->uri = file_unmanaged_save_data($contents, $uri, FILE_EXISTS_REPLACE);
     if (empty($file->uri)) {
       watchdog('apps', 'unable to save to @file', array('@file' => $uri));
       return FALSE;
@@ -525,8 +539,18 @@ function apps_add_app_info(&$apps) {
   $set_cache = FALSE;
   foreach ($apps as $id => $app) {
     if (!isset($info[$app['machine_name']])) {
-       $info[$app['machine_name']] = ($i = module_invoke($app['machine_name'], 'apps_app_info')) ? $i : array();
-       $set_cache = TRUE;
+      $info[$app['machine_name']] = array();
+      // Check if app is local.
+      $module_cache = system_rebuild_module_data();
+      if (isset($module_cache[$app['machine_name']])) {
+        if (!module_exists($app['machine_name'])) {
+          // Module is in the codebase but not installed.
+          module_load_include('module', $app['machine_name']);
+          module_load_include('app.inc', $app['machine_name']);
+        }
+        $info[$app['machine_name']] = ($i = module_invoke($app['machine_name'], 'apps_app_info')) ? $i : array();
+      }
+      $set_cache = TRUE;
     }
     $apps[$id] += $info[$app['machine_name']];
     // Add defaults

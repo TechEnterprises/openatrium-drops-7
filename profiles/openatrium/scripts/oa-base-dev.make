@@ -72,6 +72,11 @@ projects[oa_archive][subdir] = apps
 projects[oa_archive][download][type] = git
 projects[oa_archive][download][branch] = 7.x-2.x
 
+projects[oa_brand][version] = 2.x-dev
+projects[oa_brand][subdir] = apps
+projects[oa_brand][download][type] = git
+projects[oa_brand][download][branch] = 7.x-2.x
+
 projects[oa_clone][version] = 2.x-dev
 projects[oa_clone][subdir] = apps
 projects[oa_clone][download][type] = git
@@ -96,6 +101,11 @@ projects[oa_domains][version] = 2.x-dev
 projects[oa_domains][subdir] = apps
 projects[oa_domains][download][type] = git
 projects[oa_domains][download][branch] = 7.x-2.x
+
+projects[oa_export][version] = 2.x-dev
+projects[oa_export][subdir] = apps
+projects[oa_export][download][type] = git
+projects[oa_export][download][branch] = 7.x-2.x
 
 projects[oa_events_import][version] = 2.x-dev
 projects[oa_events_import][subdir] = apps
@@ -148,9 +158,13 @@ projects[oa_notifications][subdir] = apps
 projects[oa_notifications][download][type] = git
 projects[oa_notifications][download][branch] = 7.x-2.x
 
+projects[oa_project][version] = 2.x-dev
+projects[oa_project][subdir] = apps
+projects[oa_project][download][type] = git
+projects[oa_project][download][branch] = 7.x-2.x
+
 projects[oa_related][version] = 2.x-dev
 projects[oa_related][subdir] = apps
-projects[oa_related][type] = module
 projects[oa_related][download][type] = git
 projects[oa_related][download][branch] = 7.x-2.x
 
@@ -163,6 +177,11 @@ projects[oa_search][version] = 2.x-dev
 projects[oa_search][subdir] = apps
 projects[oa_search][download][type] = git
 projects[oa_search][download][branch] = 7.x-2.x
+
+; projects[oa_site_layout][version] = 2.x-dev
+projects[oa_site_layout][subdir] = apps
+projects[oa_site_layout][download][type] = git
+projects[oa_site_layout][download][branch] = 7.x-2.x
 
 projects[oa_sitemap][version] = 2.x-dev
 projects[oa_sitemap][subdir] = apps
@@ -211,6 +230,16 @@ projects[oa_radix][version] = 3.x-dev
 projects[oa_radix][download][type] = git
 projects[oa_radix][download][branch] = 7.x-3.x
 
+projects[oa_basetheme][type] = theme
+; projects[oa_basetheme][version] = 2.x-dev
+projects[oa_basetheme][download][type] = git
+projects[oa_basetheme][download][branch] = 7.x-2.x
+
+projects[oa_theme][type] = theme
+; projects[oa_theme][version] = 2.x-dev
+projects[oa_theme][download][type] = git
+projects[oa_theme][download][branch] = 7.x-2.x
+
 ; *********** End Open Atrium Themes *************
 ; ************************************************
 
@@ -223,6 +252,11 @@ projects[bootstrap_tour][version] = 2.x-dev
 projects[bootstrap_tour][subdir] = contrib
 projects[bootstrap_tour][download][type] = git
 projects[bootstrap_tour][download][branch] = 7.x-2.x
+
+projects[colorizer][version] = 1.x-dev
+projects[colorizer][subdir] = contrib
+projects[colorizer][download][type] = git
+projects[colorizer][download][branch] = 7.x-1.x
 
 projects[command_buttons][version] = 1.x-dev
 projects[command_buttons][subdir] = contrib
@@ -238,6 +272,11 @@ projects[oa_angular][version] = 1.x-dev
 projects[oa_angular][subdir] = contrib
 projects[oa_angular][download][type] = git
 projects[oa_angular][download][branch] = 7.x-1.x
+
+projects[oa_responsive_regions][version] = 2.x-dev
+projects[oa_responsive_regions][subdir] = contrib
+projects[oa_responsive_regions][download][type] = git
+projects[oa_responsive_regions][download][branch] = 7.x-2.x
 
 ; *********** End Open Atrium Contrib ************
 ; ************************************************

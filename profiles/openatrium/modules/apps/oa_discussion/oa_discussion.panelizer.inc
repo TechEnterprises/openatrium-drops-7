@@ -13,13 +13,19 @@ function oa_discussion_panelizer_defaults() {
   $panelizer = new stdClass();
   $panelizer->disabled = FALSE; /* Edit this to true to make a default panelizer disabled initially */
   $panelizer->api_version = 1;
-  $panelizer->name = 'node:oa_discussion_post:default';
   $panelizer->title = 'Default';
   $panelizer->panelizer_type = 'node';
   $panelizer->panelizer_key = 'oa_discussion_post';
-  $panelizer->no_blocks = FALSE;
+  $panelizer->access = array();
+  $panelizer->view_mode = 'page_manager';
+  $panelizer->name = 'node:oa_discussion_post:default';
   $panelizer->css_id = '';
+  $panelizer->css_class = '';
   $panelizer->css = '';
+  $panelizer->no_blocks = FALSE;
+  $panelizer->title_element = 'H2';
+  $panelizer->link_to_entity = TRUE;
+  $panelizer->extra = array();
   $panelizer->pipeline = 'standard';
   $panelizer->contexts = array();
   $panelizer->relationships = array(
@@ -40,12 +46,6 @@ function oa_discussion_panelizer_defaults() {
       'id' => 1,
     ),
   );
-  $panelizer->access = array();
-  $panelizer->view_mode = 'page_manager';
-  $panelizer->css_class = '';
-  $panelizer->title_element = 'H2';
-  $panelizer->link_to_entity = TRUE;
-  $panelizer->extra = array();
   $display = new panels_display();
   $display->layout = 'radix_burr_flipped';
   $display->layout_settings = array();
@@ -62,6 +62,8 @@ function oa_discussion_panelizer_defaults() {
   $display->cache = array();
   $display->title = '';
   $display->uuid = 'f2483186-0bec-4855-a087-1b170ce6c469';
+  $display->storage_type = 'panelizer_default';
+  $display->storage_id = 'node:oa_discussion_post:default';
   $display->content = array();
   $display->panels = array();
   $pane = new stdClass();
@@ -72,7 +74,7 @@ function oa_discussion_panelizer_defaults() {
   $pane->shown = TRUE;
   $pane->access = array();
   $pane->configuration = array(
-    'align' => '1',
+    'align' => '0',
     'label' => 1,
     'return' => 'Finish',
     'cancel' => 'Cancel',
@@ -80,11 +82,15 @@ function oa_discussion_panelizer_defaults() {
     'override_title' => 0,
     'override_title_text' => '',
     'override_title_heading' => 'h2',
-    'form_build_id' => 'form-YGnL_6qh1gPG-dhlc1KwXNgMgdhBk-uFQF9f8LwemVA',
-    'form_token' => '8YTbwsFFJjryaxS8biQyqmDKZMu52T9ZxBM5xrUmltw',
+    'form_build_id' => 'form-qKg4KcSf7VuHM5ffY6pV_5tXwVlSs3-NfI1MTAAjctw',
+    'form_token' => '7mY1E1RH_d8YoFnu99LjqKZa1oqJB_tFj9lmvnHmIuo',
     'form_id' => 'oa_user_submitted_form',
     'op' => 'Finish',
     'date' => '0',
+    'node_title' => 1,
+    'picture' => 0,
+    'image_style' => 'oa_medium_thumbnail',
+    'hide_author' => 0,
   );
   $pane->cache = array();
   $pane->style = array(
@@ -380,22 +386,22 @@ function oa_discussion_panelizer_defaults() {
   $panelizer = new stdClass();
   $panelizer->disabled = FALSE; /* Edit this to true to make a default panelizer disabled initially */
   $panelizer->api_version = 1;
-  $panelizer->name = 'node:oa_discussion_post:default:featured';
   $panelizer->title = 'Default';
   $panelizer->panelizer_type = 'node';
   $panelizer->panelizer_key = 'oa_discussion_post';
-  $panelizer->no_blocks = FALSE;
-  $panelizer->css_id = '';
-  $panelizer->css = '';
-  $panelizer->pipeline = 'standard';
-  $panelizer->contexts = array();
-  $panelizer->relationships = array();
   $panelizer->access = array();
   $panelizer->view_mode = 'featured';
+  $panelizer->name = 'node:oa_discussion_post:default:featured';
+  $panelizer->css_id = '';
   $panelizer->css_class = '';
+  $panelizer->css = '';
+  $panelizer->no_blocks = FALSE;
   $panelizer->title_element = 'H2';
   $panelizer->link_to_entity = TRUE;
   $panelizer->extra = array();
+  $panelizer->pipeline = 'standard';
+  $panelizer->contexts = array();
+  $panelizer->relationships = array();
   $display = new panels_display();
   $display->layout = 'onecol';
   $display->layout_settings = array();
@@ -408,6 +414,8 @@ function oa_discussion_panelizer_defaults() {
   $display->cache = array();
   $display->title = '%node:title';
   $display->uuid = '62e61500-65e2-4fd0-a240-8b4ddfe527c5';
+  $display->storage_type = 'panelizer_default';
+  $display->storage_id = 'node:oa_discussion_post:default:featured';
   $display->content = array();
   $display->panels = array();
   $pane = new stdClass();
@@ -507,14 +515,20 @@ function oa_discussion_panelizer_defaults() {
   $panelizer = new stdClass();
   $panelizer->disabled = FALSE; /* Edit this to true to make a default panelizer disabled initially */
   $panelizer->api_version = 1;
-  $panelizer->name = 'node:oa_section:oa_section_discussion';
   $panelizer->title = 'Discussion Section';
   $panelizer->panelizer_type = 'node';
   $panelizer->panelizer_key = 'oa_section';
-  $panelizer->no_blocks = FALSE;
+  $panelizer->access = array();
+  $panelizer->view_mode = 'page_manager';
+  $panelizer->name = 'node:oa_section:oa_section_discussion';
   $panelizer->css_id = '';
+  $panelizer->css_class = '';
   $panelizer->css = '';
-  $panelizer->pipeline = 'ipe_node_access';
+  $panelizer->no_blocks = FALSE;
+  $panelizer->title_element = 'H2';
+  $panelizer->link_to_entity = TRUE;
+  $panelizer->extra = array();
+  $panelizer->pipeline = 'ipe';
   $panelizer->contexts = array();
   $panelizer->relationships = array(
     0 => array(
@@ -526,12 +540,6 @@ function oa_discussion_panelizer_defaults() {
       'id' => 1,
     ),
   );
-  $panelizer->access = array();
-  $panelizer->view_mode = 'page_manager';
-  $panelizer->css_class = '';
-  $panelizer->title_element = 'H2';
-  $panelizer->link_to_entity = TRUE;
-  $panelizer->extra = array();
   $display = new panels_display();
   $display->layout = 'radix_bryant_flipped';
   $display->layout_settings = array();
@@ -548,6 +556,8 @@ function oa_discussion_panelizer_defaults() {
   $display->cache = array();
   $display->title = '';
   $display->uuid = '82894af0-3dae-495b-a609-56786f6327f7';
+  $display->storage_type = 'panelizer_default';
+  $display->storage_id = 'node:oa_section:oa_section_discussion';
   $display->content = array();
   $display->panels = array();
   $pane = new stdClass();

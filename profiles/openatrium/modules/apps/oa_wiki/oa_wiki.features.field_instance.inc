@@ -10,7 +10,7 @@
 function oa_wiki_field_default_field_instances() {
   $field_instances = array();
 
-  // Exported field_instance: 'node-oa_wiki_page-body'
+  // Exported field_instance: 'node-oa_wiki_page-body'.
   $field_instances['node-oa_wiki_page-body'] = array(
     'bundle' => 'oa_wiki_page',
     'default_value' => NULL,
@@ -62,7 +62,7 @@ function oa_wiki_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-oa_wiki_page-field_oa_media'
+  // Exported field_instance: 'node-oa_wiki_page-field_oa_media'.
   $field_instances['node-oa_wiki_page-field_oa_media'] = array(
     'bundle' => 'oa_wiki_page',
     'default_value' => array(),
@@ -99,7 +99,7 @@ function oa_wiki_field_default_field_instances() {
     'settings' => array(
       'description_field' => 0,
       'file_directory' => '',
-      'file_extensions' => 'jpg jpeg gif png txt doc docx xls xlsx pdf ppt pptx pps ppsx odt ods odp mp3 mov mp4 m4a m4v mpeg avi ogg oga ogv weba webp webm',
+      'file_extensions' => '',
       'max_filesize' => '',
       'user_register_form' => FALSE,
     ),
@@ -144,7 +144,8 @@ function oa_wiki_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-oa_wiki_page-field_oa_wiki_page_no_redirect'
+  // Exported field_instance:
+  // 'node-oa_wiki_page-field_oa_wiki_page_no_redirect'.
   $field_instances['node-oa_wiki_page-field_oa_wiki_page_no_redirect'] = array(
     'bundle' => 'oa_wiki_page',
     'comment_alter' => 0,
@@ -194,7 +195,7 @@ function oa_wiki_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-oa_wiki_page-oa_other_spaces_ref'
+  // Exported field_instance: 'node-oa_wiki_page-oa_other_spaces_ref'.
   $field_instances['node-oa_wiki_page-oa_other_spaces_ref'] = array(
     'bundle' => 'oa_wiki_page',
     'comment_alter' => 0,
@@ -279,7 +280,7 @@ function oa_wiki_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-oa_wiki_page-oa_section_ref'
+  // Exported field_instance: 'node-oa_wiki_page-oa_section_ref'.
   $field_instances['node-oa_wiki_page-oa_section_ref'] = array(
     'bundle' => 'oa_wiki_page',
     'default_value' => NULL,
@@ -334,7 +335,7 @@ function oa_wiki_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-oa_wiki_page-og_group_ref'
+  // Exported field_instance: 'node-oa_wiki_page-og_group_ref'.
   $field_instances['node-oa_wiki_page-og_group_ref'] = array(
     'bundle' => 'oa_wiki_page',
     'default_value' => NULL,
@@ -416,7 +417,7 @@ function oa_wiki_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-oa_wiki_page-og_vocabulary'
+  // Exported field_instance: 'node-oa_wiki_page-og_vocabulary'.
   $field_instances['node-oa_wiki_page-og_vocabulary'] = array(
     'bundle' => 'oa_wiki_page',
     'default_value' => NULL,

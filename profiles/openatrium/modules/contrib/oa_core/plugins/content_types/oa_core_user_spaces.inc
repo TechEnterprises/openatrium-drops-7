@@ -75,7 +75,7 @@ function oa_core_user_spaces_render($subtype, $conf, $args, $context = NULL) {
   $archived_spaces = array();
   if (module_exists('oa_archive') && ($flag = flag_get_flag('trash'))) {
     $query = db_select('node', 'n');
-    $query->join('flag_content', 'a', 'a.fid = :fid AND n.nid = a.content_id', array(':fid' => $flag->fid));
+    $query->join('flagging', 'a', 'a.fid = :fid AND n.nid = a.entity_id', array(':fid' => $flag->fid));
     $query
       ->fields('n', array('nid'))
       ->condition('n.type', $group_types, 'IN')
@@ -196,7 +196,8 @@ function oa_core_build_space_display($spaces, $conf, $account,
       }
     }
     if ($conf['show_sections']) {
-      $sections = oa_core_space_sections($space->nid);
+      $include_archived = user_access('view trash content') || og_user_access('node', $space->nid, 'view trash content', $account);
+      $sections = oa_core_space_sections($space->nid, NODE_PUBLISHED, FALSE, array(), $include_archived);
       foreach ($sections as $id => $title) {
         $vars[$space->nid]['sections'][$id] = l($title, 'node/' . $id);
       }

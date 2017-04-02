@@ -7,6 +7,37 @@
 include_once 'oa_archive.features.inc';
 
 /**
+ * Implements hook_node_access_records().
+ */
+function oa_archive_node_access_records($node) {
+  if (($flag = flag_load('trash')) && $flag->is_flagged($node->nid)) {
+    $group = oa_core_get_group_from_node($node);
+    $gid = isset($group) ? $group + 1 : $node->status;
+    return array(array(
+      'realm' => 'trash_flag',
+      'gid' => $gid,
+      'grant_view' => $node->status,
+      'grant_update' => 0,
+      'grant_delete' => 0,
+      'priority' => 10000,
+    ));
+  }
+}
+
+/**
+ * Implements hook_node_grants().
+ */
+function oa_archive_node_grants($account, $op) {
+  $grants = array();
+  if ($space_id = oa_core_get_space_context(TRUE)) {
+    if (og_user_access('node', $space_id, "view trash content", $account)) {
+      $grants['trash_flag'] = array($space_id + 1);
+    }
+  }
+  return $grants;
+}
+
+/**
  * Implements hook_node_access().
  *
  * Deny delete access when trash flag is in use.
@@ -112,13 +143,27 @@ function oa_archive_views_query_alter(&$view, &$query) {
 }
 
 /**
- * Implements hook_flag().
+ * Implements hook_flag_flag().
+ */
+function oa_archive_flag_flag($flag, $content_id, $account, $flagging) {
+  oa_archive_trigger_flag('flag', $flag, $content_id, $account);
+}
+
+/**
+ * Implements hook_flag_unflag().
+ */
+function oa_archive_flag_unflag($flag, $content_id, $account, $flagging) {
+  oa_archive_trigger_flag('unflag', $flag, $content_id, $account);
+}
+
+/**
+ * Helper function for flag and unflag hooks.
  *
  * We need to archive/unarchive child content when archiving a Space or
  * Section. We handle unarchiving parents who had child content that was
  * already archived by storing a list of those nodes in a variable.
  */
-function oa_archive_flag($action, $flag, $content_id, $account) {
+function oa_archive_trigger_flag($action, $flag, $content_id, $account) {
   if ($flag->name == 'trash') {
     $node = node_load($content_id);
 
@@ -213,7 +258,7 @@ function _oa_archive_get_subspaces($nid) {
  *   An array of node IDs.
  */
 function _oa_archive_get_sections($nid) {
-  return array_keys(oa_core_space_sections($nid, NODE_PUBLISHED));
+  return array_keys(oa_core_space_sections($nid, NODE_PUBLISHED, NULL, array(), TRUE));
 }
 
 /**

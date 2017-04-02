@@ -61,7 +61,9 @@ function oa_core_members_widget_render($subtype, $conf, $args, $context = NULL) 
     $blocked = oa_core_get_users_for_space($space->nid, OG_STATE_BLOCKED);
   }
 
-  $members = empty($conf['hide_owner']) || empty($conf['hide_members']) ? oa_core_get_users_for_space($space->nid) : array();
+  $members = empty($conf['hide_owner']) || empty($conf['hide_members'])
+    ? oa_core_get_users_for_space($space->nid, OG_STATE_ACTIVE, TRUE)
+    : array();
   uasort($members, 'oa_core_sort_users_by_name');
   $owners = array();
   if (empty($conf['hide_owner'])) {
@@ -163,6 +165,9 @@ function oa_core_members_widget_render($subtype, $conf, $args, $context = NULL) 
         t('Inheritance disabled') => $parent_no_inherit,
       ),
       'links' => array(),
+      'subpage' => array(
+        t('Spaces') => '/members',
+      ),
     );
     if (user_access('create ' . OA_GROUP_TYPE . ' content', $user)) {
       $tabs['parents']['global_links'][] = array(
@@ -188,7 +193,7 @@ function oa_core_members_widget_render($subtype, $conf, $args, $context = NULL) 
         t('Inherited teams') => $inherited_teams,
       );
     }
-    if (user_access('create ' . OA_TEAM_TYPE . ' content', $user)) {
+    if (og_user_access('node', $space->nid, 'create ' . OA_TEAM_TYPE . ' content')) {
       $tabs['teams']['global_links'][] = array(
         'title' => t('Create New Team'),
         'url'   => url('node/add/' . str_replace('_', '-', OA_TEAM_TYPE)),
@@ -201,8 +206,9 @@ function oa_core_members_widget_render($subtype, $conf, $args, $context = NULL) 
     $tabs[$category]['items'] = array();
     if (!empty($tab['items'])) {
       foreach ($tab['items'] as $key => $items) {
+        $subpage = !empty($tabs[$category]['subpage'][$key]) ? $tabs[$category]['subpage'][$key] : '';
         foreach ($items as $id => $entity) {
-          $tabs[$category]['items'][$key][$id] = oa_core_entity_build_display($entity, $id, $space);
+          $tabs[$category]['items'][$key][$id] = oa_core_entity_build_display($entity, $id, $space, $subpage);
           if ($entity->uid == $space->uid) {
             // don't show links for main space owner
             $tabs[$category]['items'][$key][$id]['uid'] = 0;

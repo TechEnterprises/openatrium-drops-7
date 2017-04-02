@@ -48,7 +48,8 @@
       modalOptions: {
         opacity: .55,
         background: '#fff'
-      }
+      },
+      modalClass: 'default'
     };
 
     var settings = {};
@@ -97,7 +98,7 @@
     resize();
 
     $('span.modal-title', Drupal.CTools.Modal.modal).html(Drupal.CTools.Modal.currentSettings.loadingText);
-    Drupal.CTools.Modal.modalContent(Drupal.CTools.Modal.modal, settings.modalOptions, settings.animation, settings.animationSpeed);
+    Drupal.CTools.Modal.modalContent(Drupal.CTools.Modal.modal, settings.modalOptions, settings.animation, settings.animationSpeed, settings.modalClass);
     $('#modalContent .modal-content').html(Drupal.theme(settings.throbberTheme)).addClass('ctools-modal-loading');
 
     // Position autocomplete results based on the scroll position of the modal.
@@ -120,18 +121,18 @@
    */
   Drupal.theme.prototype.CToolsModalDialog = function () {
     var html = ''
-    html += '  <div id="ctools-modal">'
-    html += '    <div class="ctools-modal-content">' // panels-modal-content
-    html += '      <div class="modal-header">';
-    html += '        <a class="close" href="#">';
-    html +=            Drupal.CTools.Modal.currentSettings.closeText + Drupal.CTools.Modal.currentSettings.closeImage;
-    html += '        </a>';
-    html += '        <span id="modal-title" class="modal-title">&nbsp;</span>';
-    html += '      </div>';
-    html += '      <div id="modal-content" class="modal-content">';
-    html += '      </div>';
+    html += '<div id="ctools-modal">'
+    html += '  <div class="ctools-modal-content">' // panels-modal-content
+    html += '    <div class="modal-header">';
+    html += '      <a class="close" href="#">';
+    html +=          Drupal.CTools.Modal.currentSettings.closeText + Drupal.CTools.Modal.currentSettings.closeImage;
+    html += '      </a>';
+    html += '      <span id="modal-title" class="modal-title">&nbsp;</span>';
+    html += '    </div>';
+    html += '    <div id="modal-content" class="modal-content">';
     html += '    </div>';
     html += '  </div>';
+    html += '</div>';
 
     return html;
   }
@@ -141,11 +142,11 @@
    */
   Drupal.theme.prototype.CToolsModalThrobber = function () {
     var html = '';
-    html += '  <div id="modal-throbber">';
-    html += '    <div class="modal-throbber-wrapper">';
-    html +=        Drupal.CTools.Modal.currentSettings.throbber;
-    html += '    </div>';
+    html += '<div id="modal-throbber">';
+    html += '  <div class="modal-throbber-wrapper">';
+    html +=      Drupal.CTools.Modal.currentSettings.throbber;
     html += '  </div>';
+    html += '</div>';
 
     return html;
   };
@@ -264,7 +265,7 @@
           }
           // An empty event means we were triggered via .click() and
           // in jquery 1.4 this won't trigger a submit.
-          if (event.bubbles == undefined) {
+          if (typeof event.bubbles === "undefined") {
             $(this.form).trigger('submit');
             return false;
           }
@@ -360,8 +361,9 @@
    * @param css obj of css attributes
    * @param animation (fadeIn, slideDown, show)
    * @param speed (valid animation speeds slow, medium, fast or # in ms)
+   * @param modalClass class added to div#modalContent
    */
-  Drupal.CTools.Modal.modalContent = function(content, css, animation, speed) {
+  Drupal.CTools.Modal.modalContent = function(content, css, animation, speed, modalClass) {
     // If our animation isn't set, make it just show/pop
     if (!animation) {
       animation = 'show';
@@ -413,7 +415,7 @@
     if( docHeight < winHeight ) docHeight = winHeight;
 
     // Create our divs
-    $('body').append('<div id="modalBackdrop" style="z-index: 1000; display: none;"></div><div id="modalContent" style="z-index: 1001; position: absolute;">' + $(content).html() + '</div>');
+    $('body').append('<div id="modalBackdrop" class="backdrop-' + modalClass + '" style="z-index: 1000; display: none;"></div><div id="modalContent" class="modal-' + modalClass + '" style="z-index: 1001; position: absolute;">' + $(content).html() + '</div>');
 
     // Get a list of the tabbable elements in the modal content.
     var getTabbableElements = function () {
@@ -556,7 +558,7 @@
 
     // Bind a click for closing the modalContent
     modalContentClose = function(){close(); return false;};
-    $('.close').bind('click', modalContentClose);
+    $('#modalContent .modal-header .close').bind('click', modalContentClose);
 
     // Bind a keypress on escape for closing the modalContent
     modalEventEscapeCloseHandler = function(event) {
@@ -572,7 +574,7 @@
     // close button, but we should save the original focus to restore it after
     // the dialog is closed.
     var oldFocus = document.activeElement;
-    $('.close').focus();
+    $('#modalContent .modal-header .close').focus();
 
     // Close the open modal content and backdrop
     function close() {
@@ -581,7 +583,7 @@
       $('body').unbind( 'focus', modalEventHandler);
       $('body').unbind( 'keypress', modalEventHandler );
       $('body').unbind( 'keydown', modalTabTrapHandler );
-      $('.close').unbind('click', modalContentClose);
+      $('#modalContent .modal-header .close').unbind('click', modalContentClose);
       $('body').unbind('keypress', modalEventEscapeCloseHandler);
       $(document).trigger('CToolsDetachBehaviors', $('#modalContent'));
 
@@ -601,10 +603,14 @@
       $(oldFocus).focus();
     };
 
-    // Move and resize the modalBackdrop and modalContent on resize of the window
-     modalContentResize = function(){
+    // Move and resize the modalBackdrop and modalContent on window resize.
+    modalContentResize = function(){
 
-      // position code lifted from http://www.quirksmode.org/viewport/compatibility.html
+      // Reset the backdrop height/width to get accurate document size.
+      $('#modalBackdrop').css('height', '').css('width', '');
+
+      // Position code lifted from:
+      // http://www.quirksmode.org/viewport/compatibility.html
       if (self.pageYOffset) { // all except Explorer
       var wt = self.pageYOffset;
       } else if (document.documentElement && document.documentElement.scrollTop) { // Explorer 6 Strict
@@ -653,7 +659,7 @@
     $('body').unbind('focus', modalEventHandler);
     $('body').unbind('keypress', modalEventHandler);
     $('body').unbind( 'keydown', modalTabTrapHandler );
-    $('.close').unbind('click', modalContentClose);
+    $('#modalContent .modal-header .close').unbind('click', modalContentClose);
     $('body').unbind('keypress', modalEventEscapeCloseHandler);
     $(document).trigger('CToolsDetachBehaviors', $('#modalContent'));
 

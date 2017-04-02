@@ -43,9 +43,17 @@
           // Re-build the media if the macro has changed from the tagmap.
           if (!media && media_definition.fid) {
             Drupal.media.filter.ensureSourceMap();
-            var source = Drupal.settings.mediaSourceMap[media_definition.fid];
-            media = document.createElement(source.tagName);
-            media.src = source.src;
+            var source;
+            if (source = Drupal.settings.mediaSourceMap[media_definition.fid]) {
+              media = document.createElement(source.tagName);
+              media.src = source.src;
+              media.innerHTML = source.innerHTML;
+            }
+            else {
+              // If the media element can't be found, leave it in to be resolved
+              // by the user later.
+              continue;
+            }
           }
 
           // Apply attributes.
@@ -87,16 +95,18 @@
       var attributes = {};
 
       for (var field in options) {
-        // If the field is set to false, use an empty string for output.        
+        // If the field is set to false, use an empty string for output.
         options[field] = options[field] === false ? '' : options[field];
-        if (field.match(/^field_file_image_alt_text/)) {
+        //if (field.match(/^field_file_image_alt_text/)) {
+        if (field.match(new RegExp('^' + Drupal.settings.media.img_alt_field))) {
           attributes.alt = options[field];
           if (includeFieldID) {
             attributes.altField = field;
           }
         }
 
-        if (field.match(/^field_file_image_title_text/)) {
+        //if (field.match(/^field_file_image_title_text/)) {
+        if (field.match(new RegExp('^' + Drupal.settings.media.img_title_field))) {
           attributes.title = options[field];
           if (includeFieldID) {
             attributes.titleField = field;
@@ -164,28 +174,34 @@
     replacePlaceholderWithToken: function(content) {
       Drupal.media.filter.ensure_tagmap();
 
-      // Rewrite the tagmap in case any of the macros have changed.
-      Drupal.settings.tagmap = {};
-
-      // Wrap the content to be able to use replaceWith() and html().
-      content = $('<div>').append(content);
-      var media = $('.media-element', content);
-
-      if (media.length) {
-        // Replace all media elements with their respective macros.
-        media.replaceWith(function() {
-          var el = $(this),
-            macro = Drupal.media.filter.create_macro(el);
-
-          // Store the markup for more efficient rendering later.
-          // @see replaceTokenWidthPlaceholder()
-          Drupal.settings.tagmap[macro] = Drupal.media.filter.outerHTML(el);
-
-          return macro;
+      // Locate and process all the media placeholders in the WYSIWYG content.
+      var contentElements = $('<div/>').html(content);  // TODO: once baseline jQuery is 1.8+, switch to using $.parseHTML(content)
+      var mediaElements = contentElements.find('.media-element');
+      if (mediaElements) {
+        $(mediaElements).each(function (i) {
+          // Attempt to derive a JSON macro representation of the media placeholder.
+          // Note: Drupal 7 ships with JQuery 1.4.4, which allows $(this).attr('outerHTML') to retrieve the eement's HTML,
+          // but many sites use JQuery update to increate this to 1.6+, which insists on $(this).prop('outerHTML). 
+          // Until the minimum jQuery is >= 1.6, we need to do this the old-school way. 
+          // See http://stackoverflow.com/questions/2419749/get-selected-elements-outer-html
+          var markup = $(this).get(0).outerHTML;
+          if (markup === undefined) {
+            // Browser does not support outerHTML DOM property.  Use the more expensive clone method instead.
+            markup = $(this).clone().wrap('<div>').parent().html();
+          }
+          var macro = Drupal.media.filter.create_macro($(markup));
+          if (macro) {
+            // Replace the placeholder with the macro in the parsed content.
+            // (Can't just replace the string section, because the outerHTML may be subtly different,
+            // depending on the browser. Parsing tends to convert <img/> to <img>, for instance.)
+            Drupal.settings.tagmap[macro] = markup;
+            $(this).replaceWith(macro);
+          }
         });
+        content = $(contentElements).html();
       }
 
-      return content.html();
+      return content;
     },
 
     /**
@@ -207,7 +223,7 @@
 
       // Parse out link wrappers. They will be re-applied when the image is
       // rendered on the front-end.
-      if (element.is('a')) {
+      if (element.is('a') && element.find('img').length) {
         element = element.children();
       }
 
@@ -219,7 +235,9 @@
       // Move attributes from the file info array to the placeholder element.
       if (info.attributes) {
         $.each(Drupal.settings.media.wysiwyg_allowed_attributes, function(i, a) {
-          element.attr(a, info.attributes[a]);
+          if (info.attributes[a]) {
+            element.attr(a, info.attributes[a]);
+          }
         });
         delete(info.attributes);
 
@@ -227,7 +245,8 @@
         Drupal.media.filter.ensureSourceMap();
         Drupal.settings.mediaSourceMap[info.fid] = {
           tagName: element[0].tagName,
-          src: element[0].src
+          src: element[0].src,
+          innerHTML: element[0].innerHTML
         }
       }
 
@@ -235,18 +254,40 @@
 
       // Store the data in the data map.
       Drupal.media.filter.ensureDataMap();
+
+      // Generate a "delta" to allow for multiple embeddings of the same file.
+      var delta = Drupal.media.filter.fileEmbedDelta(info.fid, element);
+      if (Drupal.settings.mediaDataMap[info.fid]) {
+        info.field_deltas = Drupal.settings.mediaDataMap[info.fid].field_deltas || {};
+      }
+      else {
+        info.field_deltas = {};
+      }
+      info.field_deltas[delta] = info.fields;
+      element.attr('data-delta', delta);
+
       Drupal.settings.mediaDataMap[info.fid] = info;
 
       // Store the fid in the DOM to retrieve the data from the info map.
       element.attr('data-fid', info.fid);
 
-      // Add media-element class so we can find markup element later.
-      var classes = ['media-element'];
+      // Add data-media-element attribute so we can find the markup element later.
+      element.attr('data-media-element', '1')
 
+      var classes = ['media-element'];
       if (info.view_mode) {
+        // Remove any existing view mode classes.
+        element.removeClass (function (index, css) {
+          return (css.match (/\bfile-\S+/g) || []).join(' ');
+        });
         classes.push('file-' + info.view_mode.replace(/_/g, '-'));
       }
       element.addClass(classes.join(' '));
+
+      // Apply link_text if present.
+      if (info.link_text) {
+        $('a', element).html(info.link_text);
+      }
 
       return element;
     },
@@ -260,6 +301,10 @@
     create_macro: function (element) {
       var file_info = Drupal.media.filter.extract_file_info(element);
       if (file_info) {
+        if (typeof file_info.link_text == 'string') {
+          // Make sure the link_text-html-tags are properly escaped.
+          file_info.link_text = file_info.link_text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
         return '[[' + JSON.stringify(file_info) + ']]';
       }
       return false;
@@ -272,7 +317,7 @@
      *    A media element with associated file info via a file id (fid).
      */
     extract_file_info: function (element) {
-      var fid, file_info, value;
+      var fid, file_info, value, delta;
 
       if (fid = element.data('fid')) {
         Drupal.media.filter.ensureDataMap();
@@ -291,7 +336,24 @@
           });
 
           // Extract the link text, if there is any.
-          file_info.link_text = element.find('a').html();
+          file_info.link_text = (Drupal.settings.mediaDoLinkText) ? element.find('a').html() : false;
+
+          // When a file is embedded, its fields can be overridden. To allow for
+          // the edge case where the same file is embedded multiple times with
+          // different field overrides, we look for a data-delta attribute on
+          // the element, and use that to decide which set of data in the
+          // "field_deltas" property to use.
+          if (delta = element.data('delta')) {
+            if (file_info.field_deltas && file_info.field_deltas[delta]) {
+              file_info.fields = file_info.field_deltas[delta];
+
+              // Also look for an overridden view mode, aka "format".
+              // Check for existance of fields to make it backward compatible.
+              if (file_info.fields && file_info.fields.format && file_info.view_mode) {
+                file_info.view_mode = file_info.fields.format;
+              }
+            }
+          }
         }
       }
 
@@ -353,6 +415,31 @@
     ensure_tagmap: function () {
       Drupal.settings.tagmap = Drupal.settings.tagmap || {};
       return Drupal.settings.tagmap;
+    },
+
+    /**
+     * Generates a unique "delta" for each embedding of a particular file.
+     */
+    fileEmbedDelta: function(fid, element) {
+      // Ensure we have an object to track our deltas.
+      Drupal.settings.mediaDeltas = Drupal.settings.mediaDeltas || {};
+
+      // Check to see if the element already has one.
+      if (element && element.data('delta')) {
+        var existingDelta = element.data('delta');
+        // If so, make sure that it is being tracked in mediaDeltas.
+        if (!Drupal.settings.mediaDeltas[fid]) {
+          Drupal.settings.mediaDeltas[fid] = existingDelta;
+        }
+        return existingDelta;
+      }
+      // Otherwise, generate a new one. Arbitrarily start with 1.
+      var delta = 1;
+      if (Drupal.settings.mediaDeltas[fid]) {
+        delta = Drupal.settings.mediaDeltas[fid] + 1;
+      }
+      Drupal.settings.mediaDeltas[fid] = delta;
+      return delta;
     }
   }
 
